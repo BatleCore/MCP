@@ -25,7 +25,6 @@ int main(void)
   // PORTC |= (1 << Sw);
 
   DDRA = 0x00; //put PORTA into input mode
-  PORTA |= (1<<PA2); // pull up resistor
   
   adc_init();
   _delay_ms(20); // 20 millisecond delay to set ADC
@@ -34,23 +33,17 @@ int main(void)
   // values
   int AVal = 0; // default analog read val
   int sw = 0; //default switch read val
-  int sel = 1; // selected ADC input default
+  int sel = 0; // selected ADC input default
 
 
   // LOOP SECTION
   while(1) //main loop
   {
-
-    if(PINA & (1<<PINA2)) //if PINA0 is high
-    {
-      sel = 0;
-    }
-    else //if PINA0 is low (when the button is pressed in the active low configuration)
-    {
-      sel = 1;
-    }
-
     // read switch
+    // sw = read_switch(Sw);
+
+    // toggle()
+    // sel = input_toggle(sw, sel);
 
     // read ADC
     AVal = adc_read(sel); // reads the pin defined by "input_toggle()"
@@ -66,6 +59,11 @@ int main(void)
   return(1);
 }//end main 
 
+int read_switch(int pin){
+  int val = 0;
+  // read digital val
+  return(val);
+}
 
 int input_toggle(int sw, int sel){
   if (sw == 1){
@@ -78,8 +76,7 @@ int set_LEDs(int AVal){
   // 0 <= AVal <= 1023
 
   // define LED combinations
-  uint8_t LED_signals[9] = {
-    
+  uint8_t LED_signals[8] = {
     0b00000000,  // [0]
     0b00000001,  // [1]
     0b00000010,  // [2]
@@ -88,17 +85,11 @@ int set_LEDs(int AVal){
     0b00010000,  // [5]
     0b00100000,  // [6]
     0b01000000,  // [7]
-    0b10000000  // [8]
+    0b10000000,  // [8]
   };
-  if(AVal>1023){
-    AVal = 1023;
-  }
-  if(AVal<0){
-    AVal=0;
-  }
 
   // convert ADC value into list index values
-  int AVal_scaled = (AVal * 9) / 1024;
+  int AVal_scaled = (AVal * 8) / 1023;
 
   //set output LEDs according to analog value
   PORTC = LED_signals[AVal_scaled];
