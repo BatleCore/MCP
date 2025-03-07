@@ -41,17 +41,17 @@ int main(void)
   while(1) //main loop
   {
 
-    if(PINA & (1<<PINA2)) //if PINA0 is high
+    if(~(PINA & (1<<PINA2))) //if PINA0 is high
     {
-      sel = 0;
-    }
-    else //if PINA0 is low (when the button is pressed in the active low configuration)
-    {
-      sel = 1;
+      _delay_ms(10);
+      if(~(PINA & (1<<PINA2))){
+        sel = sel ^ 1;
+      }
     }
 
     // read switch
-
+    PORTC = (PORTA & ~(1 << PC2)) | (sel << PC2);
+    
     // read ADC
     AVal = adc_read(sel); // reads the pin defined by "input_toggle()"
 
@@ -80,7 +80,7 @@ int set_LEDs(int AVal){
   // define LED combinations
   uint8_t LED_signals[9] = {
     
-    0b00000000,  // [0]
+    // 0b00000000,  // [0]
     0b00000001,  // [1]
     0b00000010,  // [2]
     0b00000100,  // [3]
@@ -88,7 +88,7 @@ int set_LEDs(int AVal){
     0b00010000,  // [5]
     0b00100000,  // [6]
     0b01000000,  // [7]
-    0b10000000  // [8]
+    // 0b10000000  // [8]
   };
   if(AVal>1023){
     AVal = 1023;
@@ -98,7 +98,7 @@ int set_LEDs(int AVal){
   }
 
   // convert ADC value into list index values
-  int AVal_scaled = (AVal * 9) / 1024;
+  int AVal_scaled = (AVal * 7) / 1024;
 
   //set output LEDs according to analog value
   PORTC = LED_signals[AVal_scaled];
