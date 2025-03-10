@@ -24,3 +24,9 @@
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
 
 #endif /* ATMEGA2560_H_ */
+
+int task_1(void);
+int task_2(void);
+int task_3(void);
+int task_4(void);
+int task_5(void);
