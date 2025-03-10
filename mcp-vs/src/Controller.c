@@ -90,15 +90,15 @@ int set_LEDs(int AVal){
     0b01000000,  // [7]
     // 0b10000000  // [8]
   };
-  if(AVal>1023){
-    AVal = 1023;
+  if(AVal>715){
+    AVal = 715;
   }
   if(AVal<0){
     AVal=0;
   }
 
   // convert ADC value into list index values
-  int AVal_scaled = (AVal * 7) / 1024;
+  int AVal_scaled = (AVal * 9) / 1024;
 
   //set output LEDs according to analog value
   PORTC = LED_signals[AVal_scaled];
