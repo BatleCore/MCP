@@ -3,7 +3,7 @@
 //An example file for second year mechatronics project
 
 //include this .c file's header file
-#include "Controller.h"
+#include "Lab.h"
 #include "../../lib/adc/adc.h" //minimal adc lib
 #include <stdint.h>
 
