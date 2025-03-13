@@ -8,6 +8,7 @@
 
 //include this .c file's header file
 #include "Lab.h"
+#include "../lib/serial/serial.h"
 
 //static function prototypes, functions only called in this file
 
@@ -21,6 +22,16 @@ int main(void)
   
   return(1);
 }//end main 
+
+int test(void)
+{
+  char message[] = "message printed";
+  serial0_init();
+  if (serial0_available){
+    serial0_print_string(message);
+  }
+  return(0);
+}
 
 int task_1(void)
 {
@@ -45,11 +56,22 @@ int task_1(void)
     // Read ADC
     AVal = adc_read(APin);
     // convert to voltage
-    AVolt = 0;
+    AVolt = ADC_voltage_calc(AVal);
+
+    // format into string
+    char rounded[10];
+    char voltage_str[10];
+    sprintf(rounded, "%.2f", AVolt);
+    sprintf(voltage_str, "%s%s", rounded, " V");
 
     // send to serial
 
-    // _delay_ms(250);
+    if ( serial0_available() ) // bug check this condition
+    {
+      serial0_print_string(voltage_str);
+    }
+
+    _delay_ms(250);
   }
   return(0);
 }
@@ -57,6 +79,9 @@ int task_1(void)
 int task_2(void)
 {
   // 2. Demonstrate using an interrupt to update display value
+
+  // copy Task 1 init stage here once it is working
+
   while(1)
   {
     continue;
@@ -93,3 +118,43 @@ int task_5(void)
   }
   return(0);
 }
+
+// TASK 1 FUNCTIONS
+float ADC_voltage_calc(int ADC_value){
+
+  if ( ADC_value >= 1023) // clamp max limit
+  {
+    ADC_value = 1023;
+  }
+  else if ( ADC_value <= 0) // clamp min limit
+  {
+    ADC_value = 0;
+  }
+
+  float Volt_min = 1; // to be callibrated
+  float Volt_max = 4; // to be callibrated 
+  float Volt_range = Volt_max - Volt_min;
+
+  int ADC_min = 1023 * ( Volt_min / 5);
+  int ADC_max = 1023 * ( Volt_max / 5);
+  int ADC_range = ADC_max - ADC_min;
+
+  int percentage_result = ((ADC_value - ADC_min) * 100 ) / ADC_range; // result is from 0 to 100
+  float voltage_result = 5 * (ADC_value / 1023);
+
+  // return(percentage_result); // returns an int 
+  return(voltage_result); // returns a float
+}
+
+
+// TASK 2 FUNCTIONS
+
+
+// TASK 3 FUNCTIONS
+
+
+// TASK 4 FUNCTIONS
+
+
+// TASK 5 FUNCTIONS
+

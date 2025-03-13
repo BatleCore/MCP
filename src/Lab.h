@@ -30,3 +30,5 @@ int task_2(void);
 int task_3(void);
 int task_4(void);
 int task_5(void);
+
+float ADC_voltage_calc(int ADC_value);
