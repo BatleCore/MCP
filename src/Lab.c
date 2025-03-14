@@ -17,6 +17,8 @@ int task = 1; // define which task to run in the switch-case systems
 volatile int button_trigger = 0;
 int trigger_counter = 0;
 volatile uint32_t DB_timestamp = 0;
+volatile uint32_t current_timestamp = 0;
+
 const int bounce_ms = 50;
 
 int main(void)
@@ -37,7 +39,7 @@ int main(void)
 
 int test(void)
 {
-  char message[] = "message printed";
+  char message[] = "message printed how gooooood";
   serial0_init();
   if (serial0_available){
     serial0_print_string(message);
@@ -50,7 +52,7 @@ int task_1(void)
   // 1. Demonstrate display of formatted voltage to serial terminal.
 
   // Variables init
-  int AVal; // value read from analog pin
+  int AVal = 0; // value read from analog pin
   float AVolt; // AVal converted to voltage
 
 
@@ -69,17 +71,31 @@ int task_1(void)
     AVal = adc_read(APin);
 
     // convert to voltage
-    AVolt = ADC_voltage_calc(AVal);
-
+    // AVolt = ADC_voltage_calc(AVal);
+    AVolt = ((5 * AVal )/ 1024.0) *1000;
     // format into string
     char rounded[10];
-    char voltage_str[10];
-    sprintf(rounded, "%.2f", AVolt);
-    sprintf(voltage_str, "%s%s", rounded, " V");
+    char voltage_str[40];
+    // sprintf(rounded, "%.2f", AVolt);
+    // sprintf(voltage_str, "%s%s", rounded, " V\n");
+    
+    // 4226 == 4.226 
+    // var1 = 4
+    // var2 = 226 
+    // int var1 = 4226/1000 // ==4 
+    // int var = 4226 % (4*1000)
+
+    // int intmVolt = AVolt * 1000;
+    // int Vol1 = intmVolt / 1000;
+    // int Vol2 = intmVolt % 6;
+
+    int whole = AVolt;
+
+    sprintf(voltage_str, "voltage %d mV\n", whole);
 
     // send to serial
 
-    if ( serial0_available() ) // bug check this condition
+    if ( serial0_available ) // bug check this condition
     {
       serial0_print_string(voltage_str);
     }
@@ -122,7 +138,10 @@ int task_3(void)
     // send to serial
     if ( serial0_available() ) // bug check this condition
     {
-      serial0_print_string(trigger_counter);
+      char message[10];
+      sprintf(message, "%s", trigger_counter);
+
+      serial0_print_string(message);
     }
     // send via serial
     button_trigger = 0; // reset the trigger
@@ -154,25 +173,25 @@ int task_5(void)
 // TASK 1 FUNCTIONS
 float ADC_voltage_calc(int ADC_value){
 
-  if ( ADC_value >= 1023) // clamp max limit
-  {
-    ADC_value = 1023;
-  }
-  else if ( ADC_value <= 0) // clamp min limit
-  {
-    ADC_value = 0;
-  }
+  // if ( ADC_value >= 1023) // clamp max limit
+  // {
+  //   ADC_value = 1023;
+  // }
+  // else if ( ADC_value <= 0) // clamp min limit
+  // {
+  //   ADC_value = 0;
+  // }
 
-  float Volt_min = 1; // to be callibrated
-  float Volt_max = 4; // to be callibrated 
-  float Volt_range = Volt_max - Volt_min;
+  // float Volt_min = 1; // to be callibrated
+  // float Volt_max = 4; // to be callibrated 
+  // float Volt_range = Volt_max - Volt_min;
 
-  int ADC_min = 1023 * ( Volt_min / 5);
-  int ADC_max = 1023 * ( Volt_max / 5);
-  int ADC_range = ADC_max - ADC_min;
+  // int ADC_min = 1023 * ( Volt_min / 5);
+  // int ADC_max = 1023 * ( Volt_max / 5);
+  // int ADC_range = ADC_max - ADC_min;
 
-  int percentage_result = ((ADC_value - ADC_min) * 100 ) / ADC_range; // result is from 0 to 100
-  float voltage_result = 5 * (ADC_value / 1023);
+  // int percentage_result = ((ADC_value - ADC_min) * 100 ) / ADC_range; // result is from 0 to 100
+  float voltage_result = 5 * (ADC_value / 1024);
 
   // return(percentage_result); // returns an int 
   return(voltage_result); // returns a float
@@ -189,6 +208,10 @@ ISR(INT0_vect)
 {
   switch (task)
   {
+  // case 0:
+    /* UNUSED */
+  //   break;
+
   // case 1:
     /* UNUSED */
   //   break;
@@ -247,7 +270,7 @@ ISR(INT0_vect)
   case 5:
     // software debounce
     // milliseconds_init();
-    uint32_t current_timestamp = milliseconds_now();
+    current_timestamp = milliseconds_now();
     if (current_timestamp - DB_timestamp > bounce_ms)
     {
       button_trigger = 1;
@@ -266,6 +289,10 @@ int task_loop()
 {
   switch (task)
   {
+  case 0:
+    test();
+  break;
+
   case 1:
     task_1();
     break;
