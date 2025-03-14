@@ -13,7 +13,7 @@
 
 //static function prototypes, functions only called in this file
 
-int task = 1; // define which task to run in the switch-case systems
+int task = 2; // define which task to run in the switch-case systems
 volatile int button_trigger = 0;
 int trigger_counter = 0;
 volatile uint32_t DB_timestamp = 0;
@@ -111,6 +111,22 @@ int task_2(void)
 
   // copy Task 1 init stage here once it is working
   // exclude time delay
+  // Variables init
+  int AVal = 0; // value read from analog pin
+  float AVolt; // AVal converted to voltage
+
+
+  // Analog init
+  int APin = 0; // PORTA0 Analog Pin
+  DDRA &= ~(1<<APin); //put PORTA(APin) into input mode (LOW)
+  adc_init(); // initialize ADC
+  _delay_ms(20); // 20 millisecond delay to set ADC
+
+  // Serial init
+  serial0_init();
+
+  char voltage_str[40];
+
 
   while(1) // loop
   {
@@ -120,7 +136,15 @@ int task_2(void)
     } while (button_trigger == 0);
 
     // read ADC and send via serial
+    AVal = adc_read(APin);
+    AVolt = ((5 * AVal )/ 1024.0) *1000;
+    int whole = AVolt;
+    sprintf(voltage_str, "voltage %d mV\n", whole);
 
+    if ( serial0_available ) // bug check this condition
+    {
+      serial0_print_string(voltage_str);
+    }
     /* copy contense of task 1 while() loop here */
     
     button_trigger = 0; // reset the conditions for next loop
@@ -221,7 +245,7 @@ ISR(INT0_vect)
     // not debouncing this one?
 
     // button debounce
-    // button_trigger = 1;
+    button_trigger = 1;
     break;
 
   case 3:
