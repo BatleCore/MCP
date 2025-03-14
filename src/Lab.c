@@ -9,26 +9,27 @@
 //include this .c file's header file
 #include "Lab.h"
 #include "../lib/serial/serial.h"
+#include "../lib/timer/milliseconds.h"
 #include <avr/interrupt.h>
 
 //static function prototypes, functions only called in this file
 
-int task = 2; // define which task to run in the switch-case systems
+int task = 5; // define which task to run in the switch-case systems
 volatile int button_trigger = 0;
 int trigger_counter = 0;
 volatile uint32_t DB_timestamp = 0;
 volatile uint32_t current_timestamp = 0;
 
-const int bounce_ms = 50;
+const int bounce_ms = 125;
 
 int main(void)
 {
 
   // CONFIGURE INTERRUPTS
-  DDRD &= ~(1<<PD0);// INT0 is also PD0 and we set the DDR to input
-  PORTD |= (1<<PD0);// enable pullup resistor on PD0
+  DDRD &= ~(1<<PD0); // INT0 is also PD0 and we set the DDR to input
+  PORTD |= (1<<PD0); // enable pullup resistor on PD0
   EICRA |= (1<<ISC01); // these two bits set
-  EICRA &= ~(1<<ISC00);// INT0 to trigger on a FALLING edge
+  EICRA &= ~(1<<ISC00); // INT0 to trigger on a FALLING edge
   EIMSK |= (1<<INT0); // enable INT0
   sei(); // activate interrupts globally
 
@@ -155,20 +156,22 @@ int task_2(void)
 int task_3(void)
 {
   // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
+  char message[40];
+  serial0_init();
+
   while(1)
   {
     _delay_ms(1000); // wait 1 second
+    // trigger_counter = 0;
+    sprintf(message, "%d\n", trigger_counter);
 
     // send to serial
-    if ( serial0_available() ) // bug check this condition
+    if ( serial0_available ) // bug check this condition
     {
-      char message[10];
-      sprintf(message, "%s", trigger_counter);
-
       serial0_print_string(message);
     }
     // send via serial
-    button_trigger = 0; // reset the trigger
+    trigger_counter = 0; // reset the trigger
 
   }
   return(0);
@@ -186,10 +189,25 @@ int task_4(void)
 
 int task_5(void)
 {
-  // 5. Implement a software solution to the button bounce problem, discuss why each method of button debounce would be used.
+  // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
+  char message[40];
+  serial0_init();
+  milliseconds_init();
   while(1)
   {
-    continue;
+    _delay_ms(1000); // wait 1 second
+    // trigger_counter = 0;
+    sprintf(message, "%d\n", trigger_counter);
+    // sprintf(message, "%d\n", milliseconds_now());
+
+    // send to serial
+    if ( serial0_available ) // bug check this condition
+    {
+      serial0_print_string(message);
+    }
+    // send via serial
+    trigger_counter = 0; // reset the trigger
+
   }
   return(0);
 }
@@ -295,15 +313,11 @@ ISR(INT0_vect)
     // software debounce
     // milliseconds_init();
     current_timestamp = milliseconds_now();
-    if (current_timestamp - DB_timestamp > bounce_ms)
+    if ((current_timestamp - DB_timestamp) > bounce_ms)
     {
-      button_trigger = 1;
+      trigger_counter++;
+      DB_timestamp = current_timestamp;
     }
-    else
-    {
-      button_trigger = 0;
-    }
-    DB_timestamp = current_timestamp;
     
     break;
   }
@@ -339,3 +353,20 @@ int task_loop()
   }
   return(0);
 }
+
+/*
+debounce methods
+
+  # Hardware
+  - reliable and logically simple.
+  - filters signal to limit the interrupt being triggered excessivley
+  - no computation required
+  - values are due to hardware, cannot be changed without changing hardware
+
+  # Code
+  - more control, easily updated parameters
+  - less cost, no physical parts required
+  - computation time will still be used for false triggers and bounces
+
+
+*/
