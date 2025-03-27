@@ -14,20 +14,16 @@
 
 //static function prototypes, functions only called in this file
 
-int task = 6; // define which task to run in the switch-case systems
+int task = 5; // define which task to run in the switch-case systems
 volatile int button_trigger = 0;
 int trigger_counter = 0;
 volatile uint32_t DB_timestamp = 0;
 volatile uint32_t current_timestamp = 0;
 
 const int bounce_ms = 125;
-char message[40];
-int bounce_delta = 0;
-
 
 int main(void)
 {
-  DB_timestamp = milliseconds_now();
 
   // CONFIGURE INTERRUPTS
   DDRD &= ~(1<<PD0); // INT0 is also PD0 and we set the DDR to input
@@ -194,30 +190,7 @@ int task_4(void)
 int task_5(void)
 {
   // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
-  serial0_init();
-  milliseconds_init();
-  while(1)
-  {
-    _delay_ms(1000); // wait 1 second
-    // trigger_counter = 0;
-    sprintf(message, "%d\n", trigger_counter);
-    // sprintf(message, "%d\n", milliseconds_now());
-
-    // send to serial
-    if ( serial0_available ) // bug check this condition
-    {
-      serial0_print_string(message);
-    }
-    // send via serial
-    trigger_counter = 0; // reset the trigger
-
-  }
-  return(0);
-}
-
-int task_6(void)
-{
-  // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
+  char message[40];
   serial0_init();
   milliseconds_init();
   while(1)
@@ -342,19 +315,6 @@ ISR(INT0_vect)
     }
     
     break;
-  case 6:
-    cli();
-    current_timestamp = milliseconds_now();
-    
-    if ( (current_timestamp - DB_timestamp) > ( bounce_delta * 4 ))
-    {
-      trigger_counter++;
-    }
-    
-    bounce_delta = current_timestamp - DB_timestamp;
-    DB_timestamp = current_timestamp;
-    sei();
-    break;
   }
 }
 
@@ -385,9 +345,6 @@ int task_loop()
   case 5:
     task_5();
     break;
-
-  case 6:
-    task_6();
   }
   return(0);
 }
