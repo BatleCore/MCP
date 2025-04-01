@@ -298,9 +298,14 @@ ISR(INT0_vect)
     // // R2 = 2k
     // // therefore R1 = 54k
     //
-    // // let C = 0.0000022 ( 2.2 uF )
+    // // let C = 0.000 0022 ( 2.2 uF )
     // // R2 = 0k9
     // // therefore R1 = 24k
+    //
+    // // let C = 0.00000022 ( 0.22 uF )
+    // // R2 = 9k
+    // // therefore R1 = 240k
+    // //
     button_trigger = 1; // trigger without debounce...
     break;
 

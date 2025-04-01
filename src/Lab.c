@@ -1,410 +1,192 @@
-// Lab 3
+/*
+Task:
+  Develop a simple stop watch using the serial terminal to show the elapsed time, this is a broad scope but some requirements are outlined below.
+    - You will need to set up a hardware to a suitable interval (0.1, 1 or 10 ms), and write a program to keep count of milliseconds, seconds and minutes.
+    - You will need to calculate a prescaler and choose register configurations
+    - As a minimum the stopwatch needs to have a start/stop button, a reset button and display time in a readable format.
+*/
 
-// 1. Demonstrate display of formatted voltage to serial terminal.
-// 2. Demonstrate using an interrupt to update display value
-// 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
-// 4. Calculate and implement an RC filter on the interrupt pin to minimize the effect of button bounce.
-// 5. Implement a software solution to the button bounce problem, discuss why each method of button debounce would be used.
+/*
+  1. Show calculations and register configuration for the setup of the timer.
+  2. Draw a flowchart describing the logic of the stopwatch (using separate flows for the interrupts)
+  3. Demonstrate a working timer (using timer interrupts)
+  4. 2 marks - Demonstrate a functional stopwatch which meets the requirements - 2 marks 
+*/
 
-//include this .c file's header file
-#include "Lab.h"
-#include "../lib/serial/serial.h"
-#include "../lib/timer/milliseconds.h"
+/*
+// STOPWATCH FEATURES
+start/stop button
+
+reset button
+
+*/
+
+
+// configure timer counter (increments / units / ms?)
+// define stopwatch function
+// timer/counter interrupt, calls stopwatch function
+
+/*
+first button press / clear stopwatch counter (seconds = 0, milliseconds = 0, etc...)
+stopwatch function is called as per timer interrupts, stopwatch counter is incremented in the timer/counter interrupt loop
+
+*/
+
 #include <avr/interrupt.h>
+#include "Controller.h"
 
-//static function prototypes, functions only called in this file
+// SETUP GLOBAL
 
-int task = 6; // define which task to run in the switch-case systems
-volatile int button_trigger = 0;
-int trigger_counter = 0;
-volatile uint32_t DB_timestamp = 0;
-volatile uint32_t current_timestamp = 0;
+#define LED_PIN 0
+#define SS_PIN 1 // Start - Stop
+#define RE_PIN 2 // Reset
 
-const int bounce_ms = 125;
-char message[40];
-int bounce_delta = 0;
+// STATES //
+int LED_state = 0;
+int timer_active = 0;
 
+// VALUES //
+int millis_all = 0;
+int seconds = 0;
+int millis = 0;
+
+// SERIAL DATA //
+char message[20];
 
 int main(void)
 {
-  DB_timestamp = milliseconds_now();
+  // CONFIGURE OUTPUT PINS //  
+  DDRA |= (1<<LED_PIN); // set PORTA pin 0 to output (HIGH), leave other pins alone
+  PORTA = 0; //set all pins low
+  PORTA &= ~(1<<LED_PIN); // set pin 0 LOW, leave other pins alone
 
-  // CONFIGURE INTERRUPTS
-  DDRD &= ~(1<<PD0); // INT0 is also PD0 and we set the DDR to input
-  PORTD |= (1<<PD0); // enable pullup resistor on PD0
-  EICRA |= (1<<ISC01); // these two bits set
-  EICRA &= ~(1<<ISC00); // INT0 to trigger on a FALLING edge
-  EIMSK |= (1<<INT0); // enable INT0
-  sei(); // activate interrupts globally
-
-  task_loop();
-  
-  return(1);
-}//end main 
-
-int test(void)
-{
-  char message[] = "message printed how gooooood";
-  serial0_init();
-  if (serial0_available){
-    serial0_print_string(message);
-  }
-  return(0);
-}
-
-int task_1(void)
-{
-  // 1. Demonstrate display of formatted voltage to serial terminal.
-
-  // Variables init
-  int AVal = 0; // value read from analog pin
-  float AVolt; // AVal converted to voltage
-
-
-  // Analog init
-  int APin = 0; // PORTA0 Analog Pin
-  DDRA &= ~(1<<APin); //put PORTA(APin) into input mode (LOW)
-  adc_init(); // initialize ADC
-  _delay_ms(20); // 20 millisecond delay to set ADC
-
-  // Serial init
-  serial0_init();
+  // CONFIGURE INPUT PINS //  
+  // SS_PIN
+  // RE_PIN
+  timer1_init_1s();
 
   while(1)
   {
-    // Read ADC
-    AVal = adc_read(APin);
-
-    // convert to voltage
-    // AVolt = ADC_voltage_calc(AVal);
-    AVolt = ((5 * AVal )/ 1024.0) *1000;
-    // format into string
-    char rounded[10];
-    char voltage_str[40];
-    // sprintf(rounded, "%.2f", AVolt);
-    // sprintf(voltage_str, "%s%s", rounded, " V\n");
-    
-    // 4226 == 4.226 
-    // var1 = 4
-    // var2 = 226 
-    // int var1 = 4226/1000 // ==4 
-    // int var = 4226 % (4*1000)
-
-    // int intmVolt = AVolt * 1000;
-    // int Vol1 = intmVolt / 1000;
-    // int Vol2 = intmVolt % 6;
-
-    int whole = AVolt;
-
-    sprintf(voltage_str, "voltage %d mV\n", whole);
-
-    // send to serial
-
-    if ( serial0_available ) // bug check this condition
+    if(message)
     {
-      serial0_print_string(voltage_str);
+      //send message via serial
+      sprintf(message, "/0");
+    }
+    _delay_ms(10);
+  }
+}
+
+
+// TIMER 1 //
+
+void timer1_init_1ms()
+{
+  /*
+  TOP = 65535 // 16 bit counter
+  crystal = 16,000,000 // 16 MHz
+  PRE = 64 // prescaler, settable
+  T(top) = (TOP+1) * PRE// 16000000
+  T(top) = 65536 * 64 / 16000000
+  T(top) = 0.262144 // seconds
+
+  Time = 0.001
+  TOP = (Time * 16000000/PRE) - 1
+  TOP = (0.001 * 16000000 / 64) - 1
+  TOP = 249 // compare value
+  */
+
+  // Control register A
+  TCCR1A = 0; //disable hardware output
+
+  // Control register B
+  TCCR1B = (1<<CS11)|(1<<CS10); // 00000011 sets the prescaler to 64
+
+  OCR1A = 249; // load the compare register
+
+  // compare interrupt
+  TIMSK1 = (1<<OCIE1A); // 00000010 enables the timer
+}
+
+void timer1_init_1s()
+{
+  /*
+  TOP = 65535 // 16 bit counter
+  crystal = 16,000,000 // 16 MHz
+  PRE = 256 // prescaler, settable
+  T(top) = (TOP+1) * PRE// 16000000
+  T(top) = 65536 * 256 / 16000000
+  T(top) = 1.048576 // seconds
+
+  Time = 1
+  TOP = (Time * 16000000/PRE) - 1
+  TOP = (1 * 16000000 / 256) - 1
+  TOP = 62499 // compare value
+  */
+
+  // Control register A
+  TCCR1A = 0; //disable hardware output
+
+  // Control register B
+  TCCR1B = (1<<CS12); // 00000100 sets the prescaler to 64
+
+  OCR1A = 62499; // load the compare register
+
+  // compare interrupt
+  TIMSK1 = (1<<OCIE1A); // 00000010 enables the timer
+  sei();
+}
+
+ISR(TIMER1_COMPA_vect) //Interrupt service routine (handler)
+{
+  cli(); // disable interrupts
+  if (timer_active)
+  {
+    timer_count();
+  }
+  return;
+  sei(); // enable interrupts
+}
+
+void timer_count()
+{
+  millis_all++;
+  seconds = millis_all / 1000;
+  millis = millis_all - seconds*1000;
+}
+
+void timer_reset()
+{
+  millis_all = 0;
+  seconds = 0;
+  millis = 0;
+}
+
+
+ISR(vector) // start-stop button
+{
+  // debounce code
+    if (timer_active)
+    {
+      // disable timer
+      timer_active = 0;
+      // create message for serial
+      sprintf(message, "PAUSED - %d:%d", seconds, millis);
+    }
+    else
+    {
+      // enable timer
+      timer_active = 1;
+      sprintf(message, "STARTED");
     }
 
-    _delay_ms(250);
-  }
-  return(0);
 }
 
-int task_2(void)
+
+IRS(vector) // reset button
 {
-  // 2. Demonstrate using an interrupt to update display value
+  // debounce code
+  time_reset();
+  // create message for serial
+  sprintf(message, "RESET - %d:%d", seconds, millis);
 
-  // copy Task 1 init stage here once it is working
-  // exclude time delay
-  // Variables init
-  int AVal = 0; // value read from analog pin
-  float AVolt; // AVal converted to voltage
-
-
-  // Analog init
-  int APin = 0; // PORTA0 Analog Pin
-  DDRA &= ~(1<<APin); //put PORTA(APin) into input mode (LOW)
-  adc_init(); // initialize ADC
-  _delay_ms(20); // 20 millisecond delay to set ADC
-
-  // Serial init
-  serial0_init();
-
-  char voltage_str[40];
-
-
-  while(1) // loop
-  {
-    do
-    {
-      _delay_ms(50); // idle when not in use
-    } while (button_trigger == 0);
-
-    // read ADC and send via serial
-    AVal = adc_read(APin);
-    AVolt = ((5 * AVal )/ 1024.0) *1000;
-    int whole = AVolt;
-    sprintf(voltage_str, "voltage %d mV\n", whole);
-
-    if ( serial0_available ) // bug check this condition
-    {
-      serial0_print_string(voltage_str);
-    }
-    /* copy contense of task 1 while() loop here */
-    
-    button_trigger = 0; // reset the conditions for next loop
-  }
-  return(0);
 }
-
-int task_3(void)
-{
-  // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
-  char message[40];
-  serial0_init();
-
-  while(1)
-  {
-    _delay_ms(1000); // wait 1 second
-    // trigger_counter = 0;
-    sprintf(message, "%d\n", trigger_counter);
-
-    // send to serial
-    if ( serial0_available ) // bug check this condition
-    {
-      serial0_print_string(message);
-    }
-    // send via serial
-    trigger_counter = 0; // reset the trigger
-
-  }
-  return(0);
-}
-
-int task_4(void)
-{
-  // 4. Calculate and implement an RC filter on the interrupt pin to minimize the effect of button bounce.
-  while(1)
-  {
-    continue;
-  }
-  return(0);
-}
-
-int task_5(void)
-{
-  // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
-  serial0_init();
-  milliseconds_init();
-  while(1)
-  {
-    _delay_ms(1000); // wait 1 second
-    // trigger_counter = 0;
-    sprintf(message, "%d\n", trigger_counter);
-    // sprintf(message, "%d\n", milliseconds_now());
-
-    // send to serial
-    if ( serial0_available ) // bug check this condition
-    {
-      serial0_print_string(message);
-    }
-    // send via serial
-    trigger_counter = 0; // reset the trigger
-
-  }
-  return(0);
-}
-
-int task_6(void)
-{
-  // 3. Demonstrate a system which measures the number of falling or rising edges within the last second.
-  serial0_init();
-  milliseconds_init();
-  while(1)
-  {
-    _delay_ms(1000); // wait 1 second
-    // trigger_counter = 0;
-    sprintf(message, "%d\n", trigger_counter);
-    // sprintf(message, "%d\n", milliseconds_now());
-
-    // send to serial
-    if ( serial0_available ) // bug check this condition
-    {
-      serial0_print_string(message);
-    }
-    // send via serial
-    trigger_counter = 0; // reset the trigger
-
-  }
-  return(0);
-}
-
-// TASK 1 FUNCTIONS
-float ADC_voltage_calc(int ADC_value){
-
-  // if ( ADC_value >= 1023) // clamp max limit
-  // {
-  //   ADC_value = 1023;
-  // }
-  // else if ( ADC_value <= 0) // clamp min limit
-  // {
-  //   ADC_value = 0;
-  // }
-
-  // float Volt_min = 1; // to be callibrated
-  // float Volt_max = 4; // to be callibrated 
-  // float Volt_range = Volt_max - Volt_min;
-
-  // int ADC_min = 1023 * ( Volt_min / 5);
-  // int ADC_max = 1023 * ( Volt_max / 5);
-  // int ADC_range = ADC_max - ADC_min;
-
-  // int percentage_result = ((ADC_value - ADC_min) * 100 ) / ADC_range; // result is from 0 to 100
-  float voltage_result = 5 * (ADC_value / 1024);
-
-  // return(percentage_result); // returns an int 
-  return(voltage_result); // returns a float
-}
-
-// INTERRUPT CODE
-
-ISR(INT0_vect)
-{
-  switch (task)
-  {
-  // case 0:
-    /* UNUSED */
-  //   break;
-
-  // case 1:
-    /* UNUSED */
-  //   break;
-  
-  case 2:
-
-    // not debouncing this one?
-
-    // button debounce
-    button_trigger = 1;
-    break;
-
-  case 3:
-    // not debouncing this one?
-    trigger_counter++;
-
-    break;
-
-  case 4:
-    // // hardware debounce
-    // // low signal 0v > 1.5v
-    // // high signal 3c > 5v
-    //
-    // // DISCHARGING ( pressed )
-    // // V(cap) = V(i) * e^( -t / (R1) * C )
-    //
-    // // CHARGING ( released )
-    // // V(cap) = V(f) * ( 1 - e^( -t / (R1 + R2) * C ) )
-    //
-    // // Charging:
-    // // 1.5v, 20ms
-    // // 1.5 = 5 * ( 1 - e^( -0.02 / (R1 + R2) * C ) )
-    // // ( R1 + R2 ) * C = 0.05607
-    //
-    // // Discharging:
-    // // 5 > 3v, 1ms
-    // // 3 = 5 * e^( -0.001 / (R1) * C )
-    // // (R1) * C ) = 0.00196
-    //
-    // // R1 = R2 * 27.6
-    //
-    // // let C = 0.0000001 F ( 100 nF )
-    // // R2 = 20k
-    // // therefore R1 = 540k
-    //
-    // // let C = 0.000001 ( 1 uF )
-    // // R2 = 2k
-    // // therefore R1 = 54k
-    //
-    // // let C = 0.0000022 ( 2.2 uF )
-    // // R2 = 0k9
-    // // therefore R1 = 24k
-    button_trigger = 1; // trigger without debounce...
-    break;
-
-  case 5:
-    // software debounce
-    // milliseconds_init();
-    current_timestamp = milliseconds_now();
-    if ((current_timestamp - DB_timestamp) > bounce_ms)
-    {
-      trigger_counter++;
-      DB_timestamp = current_timestamp;
-    }
-    
-    break;
-  case 6:
-    cli();
-    current_timestamp = milliseconds_now();
-    
-    if ( (current_timestamp - DB_timestamp) > ( bounce_delta * 4 ))
-    {
-      trigger_counter++;
-    }
-    
-    bounce_delta = current_timestamp - DB_timestamp;
-    DB_timestamp = current_timestamp;
-    sei();
-    break;
-  }
-}
-
-int task_loop()
-{
-  switch (task)
-  {
-  case 0:
-    test();
-  break;
-
-  case 1:
-    task_1();
-    break;
-  
-  case 2:
-    task_2();
-    break;
-
-  case 3:
-    task_3();
-    break;
-
-  case 4:
-    task_4();
-    break;
-
-  case 5:
-    task_5();
-    break;
-
-  case 6:
-    task_6();
-  }
-  return(0);
-}
-
-/*
-debounce methods
-
-  # Hardware
-  - reliable and logically simple.
-  - filters signal to limit the interrupt being triggered excessivley
-  - no computation required
-  - values are due to hardware, cannot be changed without changing hardware
-
-  # Code
-  - more control, easily updated parameters
-  - less cost, no physical parts required
-  - computation time will still be used for false triggers and bounces
-
-
-*/
