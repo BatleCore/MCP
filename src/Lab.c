@@ -1,192 +1,129 @@
 /*
-Task:
-  Develop a simple stop watch using the serial terminal to show the elapsed time, this is a broad scope but some requirements are outlined below.
-    - You will need to set up a hardware to a suitable interval (0.1, 1 or 10 ms), and write a program to keep count of milliseconds, seconds and minutes.
-    - You will need to calculate a prescaler and choose register configurations
-    - As a minimum the stopwatch needs to have a start/stop button, a reset button and display time in a readable format.
+**TASK 1**
+
+Your task is to achieve 2-way simultaneous communication between 2 microcontrollers. 
+- Microcontroller one "*robot*" will read and transmit sensor values 
+  (range sensors/ light sensors), and recieve commands to control a servo motor.
+- Microcontroller two "*controller*" will read and transmit joystick values while 
+  printing relevant sensor values from serial to an LCD screen or terminal.
+- You will need to interpret the signals and display on the *controller* if the robot 
+  should be stationary, moving forward, left or right based on light dependant resistor 
+  sensing.
+
+### Outcomes
+
+1. Define the communication protocol for serial communication 
+   between the robot and controller microcontrollers.
+	  - Ensure it is clear how the instructions are structured and how they are delimited.
+	  - Make it clear what information is sent in your communication protocol.
+ 		- Define this separately for each direction
+2. Discuss design considerations for reliable commmunications:
+   	- What is buffer overflow and why would it occur.
+   	- What error detection exists in this communication. What could be added?
+3. Demonstrate functional 1-way communication*
+4. Demonstrate functional 2-way communication*
+	  - Including use of LCD screen
+5. Demonstrate a functional interpretation of the sensor data
+	  - This must include some data transformation to make it readable, 
+    consider what might be useful for the final project.
 */
 
-/*
-  1. Show calculations and register configuration for the setup of the timer.
-  2. Draw a flowchart describing the logic of the stopwatch (using separate flows for the interrupts)
-  3. Demonstrate a working timer (using timer interrupts)
-  4. 2 marks - Demonstrate a functional stopwatch which meets the requirements - 2 marks 
-*/
+//Example ATmega2560 Project
+//File: ATmega2560Project.c
+//An example file for second year mechatronics project
 
-/*
-// STOPWATCH FEATURES
-start/stop button
-
-reset button
-
-*/
-
-
-// configure timer counter (increments / units / ms?)
-// define stopwatch function
-// timer/counter interrupt, calls stopwatch function
-
-/*
-first button press / clear stopwatch counter (seconds = 0, milliseconds = 0, etc...)
-stopwatch function is called as per timer interrupts, stopwatch counter is incremented in the timer/counter interrupt loop
-
-*/
-
-#include <avr/interrupt.h>
+//include this .c file's header file
 #include "Controller.h"
+#include "serial.h"
+#include "milliseconds.h"
+#include "hd44780.h"
 
-// SETUP GLOBAL
+/*
+## LCD
 
-#define LED_PIN 0
-#define SS_PIN 1 // Start - Stop
-#define RE_PIN 2 // Reset
+16 characters per line
+lcd_goto( 0x40 ); << hexadecimal val for 64, sends to first char of line 2
 
-// STATES //
-int LED_state = 0;
-int timer_active = 0;
-
-// VALUES //
-int millis_all = 0;
-int seconds = 0;
-int millis = 0;
-
-// SERIAL DATA //
-char message[20];
+*/
 
 int main(void)
 {
-  // CONFIGURE OUTPUT PINS //  
-  DDRA |= (1<<LED_PIN); // set PORTA pin 0 to output (HIGH), leave other pins alone
-  PORTA = 0; //set all pins low
-  PORTA &= ~(1<<LED_PIN); // set pin 0 LOW, leave other pins alone
+  serial2_init(); // sends to robot via serial 2
+  milliseconds_init();
+  adc_init();
+  _delay_ms(10); // allow ADC to initialize
 
-  // CONFIGURE INPUT PINS //  
-  // SS_PIN
-  // RE_PIN
-  timer1_init_1s();
+  // analog data variables
+  volatile uint16_t JOY_X_val, JOY_Y_val;
+  uint8_t JOY_X_pin = 0; // pin to be allocated
+  uint8_t JOY_Y_pin = 0; // pin to be allocated
+  uint8_t instruction[2];
+
+  // serial data vairables
+  // how many bytes are we sending?
+  uint32_t current_ms, last_send_ms;
+  uint8_t databyte1 = 0;
+  uint8_t databyte2 = 0;
+  uint8_t recievedData[2]; // only 2?
+  char serial_string[60] = {0};
 
   while(1)
   {
-    if(message)
+    current_ms = milliseconds_now();
+
+    // Send Serial
+    if( (current_ms-last_send_ms) >=  100 ) // if sample interval large enough
     {
-      //send message via serial
-      sprintf(message, "/0");
+
+      // read ADC values
+      JOY_X_val = adc_read(JOY_X_pin); // currently 16 bit
+      JOY_Y_val = adc_read(JOY_Y_pin); // currently 16 bit
+
+      instruction_for_robot(JOY_X_val, JOY_Y_val); // defines data for "instruction"
+
+
+      serial2_write_bytes(2, instruction[0], instruction[2]); // 1 byte = 8 bits
+      last_send_ms = current_ms;
     }
-    _delay_ms(10);
+
+    // Receive Serial
+    if (serial2_available()) // only for receiving data
+    {
+      serial2_get_data(recievedData, 2); // data variable, data size (bytes)
+
+      // proccess data, how should we move?
+      // convert to message for LCD screen
+
+      /*******************
+      ** 100%L    100%R **
+      **      STOP      **
+      **  FORWARD LEFT  **
+      **  FORWARD RIGHT **
+      **FORWARD STRAIGHT**
+      **  REVERSE LEFT  **
+      **  REVERSE RIGHT **
+      **REVERSE STRAIGHT**
+      *******************/
+
+      // send to LCD
+
+      // sprintf(serial_string, "\nData1: %3u, Data2: %3u", recievedData[0], recievedData[1]);
+      // serial0_print_string(serial_string);
+    }
   }
+  return(1);
+}//end main 
+
+uint8_t instruction_for_robot(uint8_t X_val, uint8_t y_val){
+  // what means what?
+  // X_val controls motor left/right
+  // Y_val controls motor speed
+  // instruction[0] for robot speed ( 0 for stop )
+  // instruction[1] for direction (0 for left, 255 for right, vary in between)
+
+  return(0);
 }
 
-
-// TIMER 1 //
-
-void timer1_init_1ms()
-{
-  /*
-  TOP = 65535 // 16 bit counter
-  crystal = 16,000,000 // 16 MHz
-  PRE = 64 // prescaler, settable
-  T(top) = (TOP+1) * PRE// 16000000
-  T(top) = 65536 * 64 / 16000000
-  T(top) = 0.262144 // seconds
-
-  Time = 0.001
-  TOP = (Time * 16000000/PRE) - 1
-  TOP = (0.001 * 16000000 / 64) - 1
-  TOP = 249 // compare value
-  */
-
-  // Control register A
-  TCCR1A = 0; //disable hardware output
-
-  // Control register B
-  TCCR1B = (1<<CS11)|(1<<CS10); // 00000011 sets the prescaler to 64
-
-  OCR1A = 249; // load the compare register
-
-  // compare interrupt
-  TIMSK1 = (1<<OCIE1A); // 00000010 enables the timer
-}
-
-void timer1_init_1s()
-{
-  /*
-  TOP = 65535 // 16 bit counter
-  crystal = 16,000,000 // 16 MHz
-  PRE = 256 // prescaler, settable
-  T(top) = (TOP+1) * PRE// 16000000
-  T(top) = 65536 * 256 / 16000000
-  T(top) = 1.048576 // seconds
-
-  Time = 1
-  TOP = (Time * 16000000/PRE) - 1
-  TOP = (1 * 16000000 / 256) - 1
-  TOP = 62499 // compare value
-  */
-
-  // Control register A
-  TCCR1A = 0; //disable hardware output
-
-  // Control register B
-  TCCR1B = (1<<CS12); // 00000100 sets the prescaler to 64
-
-  OCR1A = 62499; // load the compare register
-
-  // compare interrupt
-  TIMSK1 = (1<<OCIE1A); // 00000010 enables the timer
-  sei();
-}
-
-ISR(TIMER1_COMPA_vect) //Interrupt service routine (handler)
-{
-  cli(); // disable interrupts
-  if (timer_active)
-  {
-    timer_count();
-  }
-  return;
-  sei(); // enable interrupts
-}
-
-void timer_count()
-{
-  millis_all++;
-  seconds = millis_all / 1000;
-  millis = millis_all - seconds*1000;
-}
-
-void timer_reset()
-{
-  millis_all = 0;
-  seconds = 0;
-  millis = 0;
-}
-
-
-ISR(vector) // start-stop button
-{
-  // debounce code
-    if (timer_active)
-    {
-      // disable timer
-      timer_active = 0;
-      // create message for serial
-      sprintf(message, "PAUSED - %d:%d", seconds, millis);
-    }
-    else
-    {
-      // enable timer
-      timer_active = 1;
-      sprintf(message, "STARTED");
-    }
-
-}
-
-
-IRS(vector) // reset button
-{
-  // debounce code
-  time_reset();
-  // create message for serial
-  sprintf(message, "RESET - %d:%d", seconds, millis);
+void instructions_from_data(void){
 
 }

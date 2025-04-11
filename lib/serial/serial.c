@@ -43,6 +43,8 @@ volatile uint8_t serial3DataByte4 = 0;
 volatile uint8_t serial3DataByte5 = 0;
 volatile uint8_t serial3DataByte6 = 0;
 
+// SERIAL 0
+
 void serial0_init(void)
 {
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0); //turn on the transmission and reception circuitry
@@ -160,6 +162,8 @@ ISR(USART0_RX_vect)  // ISR executed whenever a new byte is available in the ser
 		serial_fsm_state=1;
 	}
 } //end ISR
+
+// SERIAL 1
 
 void serial1_init(void)
 {
@@ -279,6 +283,8 @@ ISR(USART1_RX_vect)  // ISR executed whenever a new byte is available in the ser
 	}
 } //end ISR
 
+// SERIAL 2
+
 void serial2_init(void)
 {
 	UCSR2B = (1<<RXEN2)|(1<<TXEN2); //turn on the transmission and reception circuitry
@@ -337,9 +343,13 @@ void serial2_get_data(uint8_t *data, uint8_t size)
 ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the serial buffer
 {
 	static uint8_t recvByte1=0, recvByte2=0, recvByte3=0, recvByte4=0, recvByte5=0, recvByte6=0;		// data bytes received
-	static uint8_t serial_fsm_state=0;									// used in the serial receive ISR
+	static uint8_t serial_fsm_state=0;	// used in the serial receive ISR
 	static uint8_t numBytes = 6;
 	uint8_t	serial_byte_in = UDR2; //move serial byte into variable
+
+	// if only using single byte, remove all code below here
+	// with the exception of " serial2DataReady=true; "
+	
 	if(serial_byte_in == 0xFE) //check for end delimiter
 	{
 		if(serial_fsm_state == numBytes)
@@ -395,6 +405,8 @@ ISR(USART2_RX_vect)  // ISR executed whenever a new byte is available in the ser
 		serial_fsm_state=1;
 	}
 } //end ISR
+
+// SERIAL 3
 
 void serial3_init(void)
 {
