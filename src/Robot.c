@@ -1,123 +1,170 @@
-/*
-**TASK 1**
-
-Your task is to achieve 2-way simultaneous communication between 2 microcontrollers. 
-- Microcontroller one "*robot*" will read and transmit sensor values 
-  (range sensors/ light sensors), and recieve commands to control a servo motor.
-- Microcontroller two "*controller*" will read and transmit joystick values while 
-  printing relevant sensor values from serial to an LCD screen or terminal.
-- You will need to interpret the signals and display on the *controller* if the robot 
-  should be stationary, moving forward, left, or right based on light dependant 
-  resistor sensing.
-
-### Outcomes
-
-1. Define the communication protocol for serial communication 
-   between the robot and controller microcontrollers.
-	  - Ensure it is clear how the instructions are structured and how they are delimited.
-	  - Make it clear what information is sent in your communication protocol.
- 		- Define this separately for each direction
-2. Discuss design considerations for reliable commmunications:
-   	- What is buffer overflow and why would it occur.
-   	- What error detection exists in this communication. What could be added?
-3. Demonstrate functional 1-way communication*
-4. Demonstrate functional 2-way communication*
-	  - Including use of LCD screen
-5. Demonstrate a functional interpretation of the sensor data
-	  - This must include some data transformation to make it readable, 
-    consider what might be useful for the final project.
-*/
-
-//Example ATmega2560 Project
-//File: ATmega2560Project.c
-//An example file for second year mechatronics project
-
-//include this .c file's header file
+// Lab 8 Robot Micro
 #include "Robot.h"
-#include "serial.h"
-#include "milliseconds.h"
+ 
+// Constants
+#define PACKETSIZE 6  // Max serial packet size we expect
+ 
+// H-Bridge & Motor Control
+#define PORT_PWM PORTB
+#define DDR_PWM DDRB
+#define PIN_PWM_ML PB5 // D11 → OC1A (PWM output for left motor)
+#define PIN_PWM_MR PB6 // D12 → OC1B (PWM output for right motor)
+#define PORT_CONTROL PORTA
 
-//static function prototypes, functions only called in this file
+// MOTOR PINS
+#define PIN_ML_F PA0 // D22 → Left motor forward
+#define PIN_ML_R PA1 // D23 → Left motor reverse
+#define PIN_MR_F PA2 // D24 → Right motor forward
+#define PIN_MR_R PA3 // D25 → Right motor reverse
 
-/*
-- read ADC values
-- send ADC values via serial to controller
-- receive instructions from controller
-- follow instructions
-
-if ( time )
-
-*/
-
-int main(void)
-{
-  serial2_init(); // sends to controller via serial 2
-  milliseconds_init();
-  adc_init();
-  _delay_ms(10); // allow ADC to initialize
-
-  // analog data variables
-  volatile uint16_t LDR_left_val, LDR_right_val; // from 0 to 1023 ( 10 bit? )
-  uint8_t LDR_left_pin = 0; // pin to be allocated
-  uint8_t LDR_right_pin = 0; // pin to be allocated
-
-  // serial data vairables
-  // how many bytes are we sending?
-  uint32_t current_ms, last_send_ms;
-  uint8_t databyte1 = 0;
-  uint8_t databyte2 = 0;
-  uint8_t recievedData[2]; // only 2?
-  char serial_string[60] = {0};
-
-  while(1)
-  {
-    current_ms = milliseconds_now();
-
-    // Send Serial
-    if( (current_ms-last_send_ms) >=  100 ) // if sample interval large enough
-    {
-
-      // read ADC values
-      LDR_left_val = ADC_valConvert(adc_read(LDR_left_pin)); // currently 16 bit
-      LDR_right_val = ADC_valConvert(adc_read(LDR_right_pin)); // currently 16 bit
-
-      // update dataBytes
-      // this will need to be adjusted.
-      // either data shrunk or bytes split and recombined
-      serial2_write_bytes(2, databyte1, databyte2); // 1 byte = 8 bits
-      last_send_ms = current_ms;
-    }
-
-    // Receive Serial
-    if (serial2_available()) // only for receiving data
-    {
-      // "receivedData" is the instruction from controller
-      // 2 bits: 
-      //        [0] for speed (0 to 255) 
-      //        [0] for direction (0 left, 127 straight, 255 right, gradient in between)
-      serial2_get_data(recievedData, 2); // data variable, data size (bytes)
-      move_robot(recievedData[0], recievedData[1]);
-    }
-  }
-  return(1);
+// CLOCK COMPLARE FOR PWMs
+#define DUTY_LEFT OCR1A
+#define DUTY_RIGHT OCR1B
+ 
+// Communication Command Codes
+#define LDR_REQUEST 0xA0   // Controller is asking for light sensor data
+#define JOYSTICK_READ 0xA1   // Controller is sending joystick values
+#define REQUEST_ERROR 0xEE   // For handling invalid codes
+ 
+// Light Sensor ADC Channels
+#define LEFT_LDR_PIN 0
+#define RIGHT_LDR_PIN 1
+ 
+/********************
+Timer1 PWM Setup
+Phase and Frequency Correct PWM Mode (mode 8)
+Prescaler = 8, ICR1 = 2000 → 500Hz PWM frequency
+Used for motor speed control
+********************/
+void timerPWM_init() {
+  TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
+  TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
+  ICR1 = 2000;              // Set TOP for 500Hz
+  OCR1A = 0;
+  OCR1B = 0;
+  DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
 }
-
-uint16_t ADC_valConvert(uint16_t val){
-  uint16_t value = val; // place-holder
-  return(value);
+ 
+// Scale raw LDR reading (0–1023) to 0–255
+uint8_t LDRmap(int reading) {
+  return reading >> 2;
 }
-
-void move_robot(uint8_t speed, uint8_t direction){
-  // this will probably have to change. 
-  // robot control is manual, not by sensor logic
-  // data will probaby be speed for motor_left and motor_right
-
-  if(speed){
-    //speedy things
+ 
+/********************
+Joystick → Motor Mapping
+- Converts joystick (X/Y) into motor PWM duty cycle and direction
+- Handles turning and direction flipping logic
+********************/
+void differential_PWM(uint8_t x, uint8_t y) {
+  uint8_t leftRatio = 100;
+  uint8_t rightRatio = 100;
+  uint8_t speedRatio = 0;
+  uint16_t leftPWM = 0;
+  uint16_t rightPWM = 0;
+ 
+  // Determine left/right scaling based on X-axis
+  if (x < 127) { // Joystick pushed left
+    leftRatio = 100 * x / 127;
+    rightRatio = 100;
   }
-  else
-  {
-    // halt all motion
-    // set motors to 0
+  else if (x > 128) { // Joystick pushed right
+    leftRatio = 100;
+    rightRatio = 100 * (255 - x) / 127;
   }
+ 
+  // Calculate motor speeds based on Y-axis
+  if (y > 128) { // Forward
+    speedRatio = 100 * (y - 128) / 127;
+    leftPWM = 2 * speedRatio * leftRatio;
+    rightPWM = 2 * speedRatio * rightRatio;
+ 
+    // Set direction: forward
+    PORT_CONTROL |= (1 << PIN_ML_F);
+    PORT_CONTROL &= ~(1 << PIN_ML_R);
+    PORT_CONTROL |= (1 << PIN_MR_F);
+    PORT_CONTROL &= ~(1 << PIN_MR_R);
+  }
+  else if (y < 127) { // Backward
+    speedRatio = 100 * y / 127;
+    leftPWM = 2 * speedRatio * rightRatio;
+    rightPWM = 2 * speedRatio * leftRatio;
+ 
+    // Set direction: reverse
+    PORT_CONTROL |= (1 << PIN_ML_R);
+    PORT_CONTROL &= ~(1 << PIN_ML_F);
+    PORT_CONTROL |= (1 << PIN_MR_R);
+    PORT_CONTROL &= ~(1 << PIN_MR_F);
+  }
+ 
+  // Write final PWM duty cycles to Timer1
+  OCR1A = leftPWM;
+  OCR1B = rightPWM;
+}
+ 
+/********************
+Robot Initialization
+- Serial for debug (Serial0)
+- Serial2 for XBee communication
+- ADC for joystick & LDRs
+- Timer for PWM
+********************/
+void setup() {
+  cli();           // Disable interrupts during setup
+  serial0_init();      // Debug serial
+  serial2_init();      // Xbee serial
+  milliseconds_init();   // Millisecond timing
+  timerPWM_init();     // Timer1 PWM setup
+  _delay_ms(20);
+  adc_init();        // Analog input (joystick + sensors)
+  _delay_ms(20);
+  sei();           // Enable interrupts
+}
+ 
+/********************
+Main Program Loop
+- Waits for incoming packet over Serial2
+- Responds based on command type:
+  → JOYSTICK_READ: control motors
+  → LDR_REQUEST: return light sensor values
+********************/
+int main(void) {
+  setup();
+ 
+  uint8_t dataRX[PACKETSIZE];
+  int x_val = 0;
+  int y_val = 0;
+ 
+  while (1) {
+    if (serial2_available()) {
+      serial2_get_data(dataRX, PACKETSIZE);
+ 
+      switch (dataRX[0]) {
+        case LDR_REQUEST: {
+          // Read and respond with LDR values
+          int left_LDR_read = adc_read(LEFT_LDR_PIN);
+          int right_LDR_read = adc_read(RIGHT_LDR_PIN);
+          uint8_t left_light = LDRmap(left_LDR_read);
+          uint8_t right_light = LDRmap(right_LDR_read);
+          serial2_write_bytes(2, left_light, right_light);
+          break;
+        }
+ 
+        case JOYSTICK_READ: {
+          // Use joystick X/Y to update motor control
+          x_val = dataRX[1];
+          y_val = dataRX[2];
+          differential_PWM(x_val, y_val);
+          break;
+        }
+ 
+        default: {
+          // Unrecognized command
+          serial2_write_bytes(1, REQUEST_ERROR);
+          break;
+        }
+      }
+    }
+  }
+ 
+  return 0;
 }
