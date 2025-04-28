@@ -18,7 +18,7 @@
 #include "serial.h" //minimal serial lib
 #include "adc.h" //minimal adc lib
 #include "milliseconds.h" //milliseconds timekeeping lib
-#include "hd44780.h" //LCD lib
+// #include "hd44780.h" //LCD lib
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
