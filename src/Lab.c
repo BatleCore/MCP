@@ -36,7 +36,7 @@ Your task is to achieve 2-way simultaneous communication between 2 microcontroll
 #include "Controller.h"
 #include "serial.h"
 #include "milliseconds.h"
-#include "hd44780.h"
+// #include "hd44780.h"
 
 /*
 ## LCD
@@ -52,13 +52,14 @@ int main(void)
   milliseconds_init();
   adc_init();
   _delay_ms(10); // allow ADC to initialize
+  lcd_init();
 
   // analog data variables
   volatile uint16_t JOY_X_val, JOY_Y_val;
   uint8_t JOY_X_pin = 0; // pin to be allocated
   uint8_t JOY_Y_pin = 0; // pin to be allocated
   uint8_t instruction[2];
-
+\
   // serial data vairables
   // how many bytes are we sending?
   uint32_t current_ms, last_send_ms;
@@ -67,63 +68,40 @@ int main(void)
   uint8_t recievedData[2]; // only 2?
   char serial_string[60] = {0};
 
-  while(1)
-  {
-    current_ms = milliseconds_now();
+  char LCD_msg[33] = {0};
 
-    // Send Serial
-    if( (current_ms-last_send_ms) >=  100 ) // if sample interval large enough
-    {
-
-      // read ADC values
-      JOY_X_val = adc_read(JOY_X_pin); // currently 16 bit
-      JOY_Y_val = adc_read(JOY_Y_pin); // currently 16 bit
-
-      instruction_for_robot(JOY_X_val, JOY_Y_val); // defines data for "instruction"
+  int8_t val1 = 10;
+  int8_t val2 = 73;
+  
+  print_to_lcd("testing", val1, val2);
 
 
-      serial2_write_bytes(2, instruction[0], instruction[2]); // 1 byte = 8 bits
-      last_send_ms = current_ms;
-    }
-
-    // Receive Serial
-    if (serial2_available()) // only for receiving data
-    {
-      serial2_get_data(recievedData, 2); // data variable, data size (bytes)
-
-      // proccess data, how should we move?
-      // convert to message for LCD screen
-
-      /*******************
-      ** 100%L    100%R **
-      **      STOP      **
-      **  FORWARD LEFT  **
-      **  FORWARD RIGHT **
-      **FORWARD STRAIGHT**
-      **  REVERSE LEFT  **
-      **  REVERSE RIGHT **
-      **REVERSE STRAIGHT**
-      *******************/
-
-      // send to LCD
-
-      // sprintf(serial_string, "\nData1: %3u, Data2: %3u", recievedData[0], recievedData[1]);
-      // serial0_print_string(serial_string);
-    }
-  }
   return(1);
-}//end main 
-
-uint8_t instruction_for_robot(uint8_t X_val, uint8_t y_val){
-  // what means what?
-  // X_val controls motor left/right
-  // Y_val controls motor speed
-  // instruction[0] for robot speed ( 0 for stop )
-  // instruction[1] for direction (0 for left, 255 for right, vary in between)
-
-  return(0);
 }
 
-void instructions_from_data(void){
 
+void print_to_lcd(char * msg1, int8_t val1, int8_t val2)
+{
+  char LCD_msg[17] = {0};
+  lcd_clrscr();
+  lcd_goto(0);
+  snprintf(LCD_msg, sizeof(LCD_msg), " L %04d  %04d R ", val1, val2);
+  lcd_puts(LCD_msg);
+  lcd_goto(0x40);
+  snprintf(LCD_msg, sizeof(LCD_msg), "%s", msg1);
+  lcd_puts(LCD_msg);
 }
+
+// uint8_t instruction_for_robot(uint8_t X_val, uint8_t y_val){
+//   // what means what?
+//   // X_val controls motor left/right
+//   // Y_val controls motor speed
+//   // instruction[0] for robot speed ( 0 for stop )
+//   // instruction[1] for direction (0 for left, 255 for right, vary in between)
+
+//   return(0);
+// }
+
+// void instructions_from_data(void){
+
+// }
