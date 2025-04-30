@@ -2,6 +2,7 @@
 // CONTROLLER
 // Lab 8 Controller Micro
 #include "Controller.h"
+#include "motor_control.h"
 // Joystick Analog Pins (forgot how this works on controller)
 #define PIN_JOYSTICKLEFT_X 0  // ADC0
 #define PIN_JOYSTICKLEFT_Y 1  // ADC1
@@ -23,7 +24,8 @@ uint8_t mapADC(uint16_t adc_val) {
 // - Initializes ADC and millisecond timing
 void setup() {
   cli();           // Disable interrupts while setting up
-  serial2_init();      // XBee serial communication
+  // serial2_init();      // XBee serial communication
+  serial0_init();      // Teminal Serial Monitor
   milliseconds_init();   // For timing control
   _delay_ms(20);
   adc_init();        // Enable analog input (for joysticks)
@@ -35,15 +37,19 @@ void setup() {
 // Reads joystick values and sends them to the robot every 20ms
 int main(void) {
   setup();  // Init everything
- 
+
   uint16_t left_x_val;   // Raw ADC reading for joystick X
   uint16_t left_y_val;   // Raw ADC reading for joystick Y
   uint32_t lastSend = 0;   // Last time a packet was sent
- 
+
+  char msg[20]; // serial string
+  int motor_d[4];
+  int debug_data[5];
+
   while (1) {
     // Check if 20ms has passed since last send
     // This limits packet rate to 50Hz (fast, but not overwhelming)
-    if (milliseconds_now() - lastSend >= 20) {
+    if (milliseconds_now() - lastSend >= 2000) {
       lastSend = milliseconds_now();
  
       // Read left joystick (X = turn, Y = forward/backward)
@@ -52,7 +58,20 @@ int main(void) {
  
       // Send joystick data as a 3-byte command packet:
       // [Command Code, X value, Y value]
-      serial2_write_bytes(3, JOYSTICK_READ, mapADC(left_x_val), mapADC(left_y_val));
+      sprintf(msg, "Joy L: %d\nJoy R: %d\n", left_x_val, left_y_val);
+      serial0_print_string(msg);
+
+      motor_data(left_x_val, left_y_val, motor_d, debug_data);
+
+      sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
+      serial0_print_string(msg);
+      sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
+      serial0_print_string(msg);
+      sprintf(msg, "%d : %d\n%d : %d\n", debug_data[0], debug_data[1], debug_data[2], debug_data[3]);
+      serial0_print_string(msg);
+      sprintf(msg, "turn dir: %d\n\n", debug_data[4]);
+      serial0_print_string(msg);
+      // serial2_write_bytes(3, JOYSTICK_READ, mapADC(left_x_val), mapADC(left_y_val));
     }
   }
  

@@ -24,6 +24,8 @@ from motor_plotting import *
 
 def motor_conversion_prototype(speed, turning, hyst = 0.1, turning_cap = 0.25, info = False):
 
+  if info:
+    print("\tPROTO")
   # parameters
   hyst = hyst # 10% tollerance for centre
   top_val = 1023
@@ -134,14 +136,14 @@ def motor_conversion_prototype(speed, turning, hyst = 0.1, turning_cap = 0.25, i
     print("slow dir: ", slow_dir)
 
   if turn_direction == 0: # LEFT - Right must be faster
-    left_duty = slow_duty
+    left_duty = int(slow_duty * 254)
     left_dir = slow_dir
-    right_duty = fast_duty
+    right_duty = int(fast_duty * 254)
     right_dir = fast_dir
   else:
-    left_duty = fast_duty
+    left_duty = int(fast_duty * 254)
     left_dir = fast_dir
-    right_duty = slow_duty
+    right_duty = int(slow_duty * 254)
     right_dir = slow_dir
 
   if info:

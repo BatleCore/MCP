@@ -14,7 +14,8 @@
 	],
 	"settings": {
 		"files.associations": {
-			"milliseconds.h": "c"
+			"milliseconds.h": "c",
+			"adc.h": "c"
 		}
 	}
 }
