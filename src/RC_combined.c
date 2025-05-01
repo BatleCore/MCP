@@ -70,59 +70,6 @@ Joystick → Motor Mapping
 - Converts joystick (X/Y) into motor PWM duty cycle and direction
 - Handles turning and direction flipping logic
 ********************/
-void differential_PWM(uint8_t x, uint8_t y) {
-  /*
-  this will be rebuilt to use motor control data:
-    - left_duty [0 -> 255]
-    - left_dir  [0, 1]
-    - right_duty [0 -> 255]
-    - right_dir  [0, 1]
-  */
-  uint8_t leftRatio = 100;
-  uint8_t rightRatio = 100;
-  uint8_t speedRatio = 0;
-  uint16_t leftPWM = 0;
-  uint16_t rightPWM = 0;
- 
-  // Determine left/right scaling based on X-axis
-  if (x < 127) { // Joystick pushed left
-    leftRatio = 100 * x / 127;
-    rightRatio = 100;
-  }
-  else if (x > 128) { // Joystick pushed right
-    leftRatio = 100;
-    rightRatio = 100 * (255 - x) / 127;
-  }
- 
-  // Calculate motor speeds based on Y-axis
-  if (y > 128) { // Forward
-    speedRatio = 100 * (y - 128) / 127;
-    leftPWM = 2 * speedRatio * leftRatio;
-    rightPWM = 2 * speedRatio * rightRatio;
- 
-    // Set direction: forward
-    PORT_CONTROL |= (1 << PIN_ML_F);
-    PORT_CONTROL &= ~(1 << PIN_ML_R);
-    PORT_CONTROL |= (1 << PIN_MR_F);
-    PORT_CONTROL &= ~(1 << PIN_MR_R);
-  }
-  else if (y < 127) { // Backward
-    speedRatio = 100 * y / 127;
-    leftPWM = 2 * speedRatio * rightRatio;
-    rightPWM = 2 * speedRatio * leftRatio;
- 
-    // Set direction: reverse
-    PORT_CONTROL |= (1 << PIN_ML_R);
-    PORT_CONTROL &= ~(1 << PIN_ML_F);
-    PORT_CONTROL |= (1 << PIN_MR_R);
-    PORT_CONTROL &= ~(1 << PIN_MR_F);
-  }
- 
-  // Write final PWM duty cycles to Timer1
-  OCR1A = leftPWM;
-  OCR1B = rightPWM;
-}
-
 void differential_PWM_v3(uint8_t* motor_data){
   /*
   [0] = left_duty
@@ -234,7 +181,7 @@ int main(void) {
           // Use joystick X/Y to update motor control
           x_val = dataRX[1];
           y_val = dataRX[2];
-          differential_PWM(x_val, y_val);
+          // differential_PWM(x_val, y_val);
           break;
         }
  
