@@ -47,7 +47,7 @@ int main(void) {
   uint32_t lastSend = 0;   // Last time a packet was sent
 
   char msg[20]; // serial string
-  int motor_d[4]; // converted motor data
+  uint8_t motor_d[4]; // converted motor data
   int debug_data[5]; // debug data from "motor_data_conversion"
 
   while (1) {
@@ -57,8 +57,8 @@ int main(void) {
       lastSend = milliseconds_now();
  
       // Read left joystick (X = turn, Y = forward/backward)
-      left_x_val = adc_read(PIN_JOYSTICKLEFT_X);
-      left_y_val = adc_read(PIN_JOYSTICKLEFT_Y);
+      left_x_val = adc_read(PIN_JOYSTICKRIGHT_X);
+      left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y);
  
       // Send joystick data as a 3-byte command packet:
       // [Command Code, X value, Y value]

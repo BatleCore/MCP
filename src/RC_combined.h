@@ -19,6 +19,8 @@
 #include "milliseconds.h" //milliseconds timekeeping lib
 #include "hd44780.h" //LCD lib
 
+void differential_PWM_v2(uint8_t* motor_data);
+void differential_PWM_v3(uint8_t* motor_data);
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
