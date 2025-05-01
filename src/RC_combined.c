@@ -290,7 +290,7 @@ int main(void) {
     }
     
     // testing stage - motor control is local, not from controller
-    if (milliseconds_now() - lastSend >= 500) {
+    if (milliseconds_now() - lastSend >= 20) {
       lastSend = milliseconds_now();
       joy_L = adc_read(LEFT_POT_PIN);
       joy_R = adc_read(RIGHT_POT_PIN);
