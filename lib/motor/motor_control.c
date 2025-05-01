@@ -1,8 +1,9 @@
 #include "motor_control.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
-void motor_data(int speed, int turning, int* results, int* bug)
+void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
 {
   static float hyst = 0.1;
   static float turning_cap = 0.25;
@@ -76,19 +77,25 @@ void motor_data(int speed, int turning, int* results, int* bug)
   // int slow_duty = abs((slow_side - centre_BOT) * 254 / centre_BOT);
   // int slow_dir = (slow_side>centre_BOT);
 
+
+  // RESULTS MAY NEED TO BE RETURNED AS uint8_t
+  // as unsigned ints, -1 is useless, therefore:
+  // forward = 2
+  // not moving = 1
+  // reverse = 0
   if (turn_direction == 0)
   {
-    results[0] = abs((slow_side - centre_BOT) * 254 / centre_BOT);
-    results[1] = (slow_side > centre_BOT);
-    results[2] = abs((fast_side - centre_BOT) * 254 / centre_BOT);
-    results[3] = (fast_side > centre_BOT);
+    results[0] = abs((slow_side - centre_BOT) * 255 / centre_BOT);
+    results[1] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
+    results[2] = abs((fast_side - centre_BOT) * 255 / centre_BOT);
+    results[3] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }
   else
   {
-    results[2] = abs((slow_side - centre_BOT) * 254 / centre_BOT);
-    results[3] = (slow_side > centre_BOT);
-    results[0] = abs((fast_side - centre_BOT) * 254 / centre_BOT);
-    results[1] = (fast_side > centre_BOT);
+    results[2] = abs((slow_side - centre_BOT) * 255 / centre_BOT);
+    results[3] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
+    results[0] = abs((fast_side - centre_BOT) * 255 / centre_BOT);
+    results[1] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }
   bug[0] = slow_side;
   bug[1] = fast_side;

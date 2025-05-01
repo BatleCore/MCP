@@ -16,6 +16,10 @@
 
 // Convert 10-bit ADC (0–1023) to 8-bit value (0–255)
 uint8_t mapADC(uint16_t adc_val) {
+  /******************************
+    Not used
+    made redundant by "motor_data_conversion" 
+  ******************************/
   return adc_val >> 2; // divide by 4
 }
 
@@ -43,8 +47,8 @@ int main(void) {
   uint32_t lastSend = 0;   // Last time a packet was sent
 
   char msg[20]; // serial string
-  int motor_d[4];
-  int debug_data[5];
+  int motor_d[4]; // converted motor data
+  int debug_data[5]; // debug data from "motor_data_conversion"
 
   while (1) {
     // Check if 20ms has passed since last send
@@ -61,8 +65,9 @@ int main(void) {
       sprintf(msg, "Joy L: %d\nJoy R: %d\n", left_x_val, left_y_val);
       serial0_print_string(msg);
 
-      motor_data(left_x_val, left_y_val, motor_d, debug_data);
+      motor_data_conversion(left_x_val, left_y_val, motor_d, debug_data);
 
+      // debugging - print to terminal
       sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
       serial0_print_string(msg);
       sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);

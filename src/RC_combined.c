@@ -1,6 +1,7 @@
-// Lab 8 Robot Micro
+// Lab 8 Robot Micro DUPLICATE
 #include "Robot.h"
- 
+#include "motor_control.h"
+
 // Constants
 #define PACKETSIZE 6  // Max serial packet size we expect
  
@@ -30,6 +31,10 @@
 #define LEFT_LDR_PIN 0
 #define RIGHT_LDR_PIN 1
  
+// POT ADC Channels
+#define LEFT_POT_PIN 2
+#define RIGHT_POT_PIN 3
+
 /********************
 Timer1 PWM Setup
 Phase and Frequency Correct PWM Mode (mode 8)
@@ -45,8 +50,8 @@ void timerPWM_init() {
   TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
   TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
   ICR1 = 2000;              // Set TOP for 500Hz
-  OCR1A = 0;
-  OCR1B = 0;
+  OCR1A = 0; // LEFT
+  OCR1B = 0; // RIGHT
   DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
 }
  
@@ -112,7 +117,91 @@ void differential_PWM(uint8_t x, uint8_t y) {
   OCR1A = leftPWM;
   OCR1B = rightPWM;
 }
- 
+
+void differential_PWM_v2(uint8_t* motor_data){
+  /*
+  [0] = left_duty
+  [1] = left_dir
+  [2] = right_duty
+  [3] = right_dir
+
+  dir:
+    2 = forward
+    1 = stationary
+    0 = reverse
+  */
+
+  uint8_t left_duty = motor_data[0];
+  uint8_t left_dir = motor_data[1];
+  uint8_t right_duty = motor_data[2];
+  uint8_t right_dir = motor_data[3];
+
+  if( left_dir == 2) { // Forward
+    PORT_CONTROL |= (1 << PIN_ML_F); // HIGH
+    PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
+  } else if (left_dir == 0) { // Reverse
+    PORT_CONTROL &= ~(1 << PIN_ML_F); // LOW
+    PORT_CONTROL |= (1 << PIN_ML_R);
+  } else { // locked LOW
+    PORT_CONTROL &= ~(1 << PIN_ML_F); // LOW
+    PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
+  }
+
+  if( right_dir == 2 ) { // Forward
+    PORT_CONTROL |= (1 << PIN_MR_F); // HIGH
+    PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+  } else if (right_dir == 0) { // Reverse
+    PORT_CONTROL &= ~(1 << PIN_MR_F); // HIGH
+    PORT_CONTROL |= (1 << PIN_MR_R); // LOW
+  } else { // locked LOW
+    PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
+    PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+  }
+  OCR1A = left_duty;
+  OCR1B = right_duty;
+}
+
+void differential_PWM_v3(uint8_t* motor_data){
+  /*
+  [0] = left_duty
+  [1] = left_dir
+  [2] = right_duty
+  [3] = right_dir
+
+  dir:
+    2 = forward
+    1 = stationary
+    0 = reverse
+  */
+
+  int left_duty = motor_data[0] * (2000/255.0);
+  int left_dir = motor_data[1];
+  int right_duty = motor_data[2] * (2000/255.0);
+  int right_dir = motor_data[3];
+
+  if( left_dir == 2) { // Forward
+    OCR1A = left_duty;
+    PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
+  } else if (left_dir == 0) { // Reverse
+    OCR1A = 2000 - left_duty;
+    PORT_CONTROL |= (1 << PIN_ML_R); // HIGH
+  } else { // locked LOW
+    OCR1A = 0;
+    PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
+  }
+
+  if( right_dir == 2 ) { // Forward
+    OCR1B = right_duty;
+    PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+  } else if (right_dir == 0) { // Reverse
+    OCR1B = 2000 - right_duty;
+    PORT_CONTROL |= (1 << PIN_MR_R); // LOW
+  } else { // locked LOW
+    OCR1B = 0;
+    PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+  }
+}
+
 /********************
 Robot Initialization
 - Serial for debug (Serial0)
@@ -123,7 +212,7 @@ Robot Initialization
 void setup() {
   cli();           // Disable interrupts during setup
   serial0_init();      // Debug serial
-  serial2_init();      // Xbee serial
+  serial2_init();      // Xbee serial - Robot to Controller
   milliseconds_init();   // Millisecond timing
   timerPWM_init();     // Timer1 PWM setup
   _delay_ms(20);
@@ -145,8 +234,18 @@ int main(void) {
   uint8_t dataRX[PACKETSIZE];
   int x_val = 0;
   int y_val = 0;
- 
+
+
+  int joy_L;
+  int joy_R;
+  uint8_t motor_data[4]; // stores converted motor data. typically recieved from serial Controller
+  int debug_data[5]; // debug data from "motor_data_conversion"
+  char msg[20]; // debug serial string
+  uint32_t lastSend = 0;   // time record for loop
+
+
   while (1) {
+    // testing stage - this will be false
     if (serial2_available()) { // used when controlling via serial
       serial2_get_data(dataRX, PACKETSIZE);
  
@@ -175,6 +274,23 @@ int main(void) {
           break;
         }
       }
+    }
+    
+    // testing stage - motor control is local, not from controller
+    if (milliseconds_now() - lastSend >= 20) {
+      lastSend = milliseconds_now();
+      joy_L = adc_read(LEFT_POT_PIN);
+      joy_R = adc_read(RIGHT_POT_PIN);
+      motor_data_conversion(joy_L, joy_R, motor_data, debug_data);
+      differential_PWM_v3(motor_data);
+
+      // sprintf(msg, "L: %d : %d\n", motor_data[1], motor_data[0]);
+      // serial0_print_string(msg);
+      // sprintf(msg, "R: %d : %d\n", motor_data[3], motor_data[2]);
+      // serial0_print_string(msg);
+      ////////////////////////////////
+      // sprintf(msg, "Joy L: %d\nJoy R: %d\n", joy_L, joy_R);
+      // serial0_print_string(msg);
     }
   }
  

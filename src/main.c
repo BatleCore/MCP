@@ -1,3 +1,5 @@
+/* REDUNDANT? TO BE DELETED? */
+
 #include "motor_control.h"  // Include the header for motor control functions
 #include <stdio.h>           // Include the standard I/O library for printf
 
@@ -11,7 +13,7 @@ int main() {
     // printf("val: %d\n", speed);
 
     // Call motor_data() to get the motor direction and duty cycle
-    int* motor_d = motor_data(speed, turning);
+    int* motor_d = motor_data_conversion(speed, turning);
 
     // Print the direction and duty cycle values
     printf("left_dir: %d\tleft_duty: %d\n", motor_d[1], motor_d[0]);
