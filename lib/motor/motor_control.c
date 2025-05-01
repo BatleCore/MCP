@@ -6,7 +6,7 @@
 void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
 {
   static float hyst = 0.1;
-  static float turning_cap = 0.25;
+  static float turning_cap = 0.33;
 
   /* Initialization */
   // top value = 1023
