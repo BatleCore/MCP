@@ -156,6 +156,7 @@ int main(void) {
 
   int joy_L;
   int joy_R;
+  char msg[30];
   uint8_t motor_data[4]; // stores converted motor data. typically recieved from serial Controller
   int debug_data[5]; // debug data from "motor_data_conversion"
   uint32_t lastSend = 0;   // time record for loop
@@ -194,13 +195,17 @@ int main(void) {
     }
     
     // testing stage - motor control is local, not from controller
-    if (milliseconds_now() - lastSend >= 20) {
+    if (milliseconds_now() - lastSend >= 500) {
       lastSend = milliseconds_now();
 
       joy_L = adc_read(LEFT_POT_PIN);
       joy_R = adc_read(RIGHT_POT_PIN);
       motor_data_conversion(joy_L, joy_R, motor_data, debug_data);
       differential_PWM_v3(motor_data);
+      sprintf(msg, "\nL: %d : %d\n", motor_data[1], motor_data[0]);
+      serial0_print_string(msg);
+      sprintf(msg, "R: %d : %d\n", motor_data[3], motor_data[2]);
+      serial0_print_string(msg);
     }
   }
 

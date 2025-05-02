@@ -14,7 +14,7 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
 
   // static int results[4]; // [left_duty, left_dir, right_duty, right_dir]
 
-  int centre_BOT = 512 * (1 - hyst / 2);
+  int centre_BOT = 512 * (1 - hyst);
   int centre_TOP = 1023 - centre_BOT;
   int hyst_range = centre_TOP - centre_BOT;
   int true_range = 1023 - hyst_range;
@@ -31,6 +31,12 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
   // int slow_dir = 1; // default forward
   // fast_duty - defined later / no default
   // slow_duty - defined later / no default
+
+  // quick nasty fix
+  // speed 0 = forward
+  // speed 1023 = backward
+
+  speed = 1023 - speed;
 
   /* trim speed value */
   if (speed > centre_TOP)
@@ -83,17 +89,26 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
   // forward = 2
   // not moving = 1
   // reverse = 0
-  if (turn_direction == 0)
+  // results[4]; // [left_duty, left_dir, right_duty, right_dir]
+
+  // turn direction:
+  //    0: turn left
+  //    1: turn right
+  if (turn_direction == 0) // toggle [0, 1] to correct direction
   {
+    // Left side slower
     results[0] = abs((slow_side - centre_BOT) * 255 / centre_BOT);
     results[1] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
+    // right side faster
     results[2] = abs((fast_side - centre_BOT) * 255 / centre_BOT);
     results[3] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }
   else
   {
+    // left side faster
     results[2] = abs((slow_side - centre_BOT) * 255 / centre_BOT);
     results[3] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
+    // right side slower
     results[0] = abs((fast_side - centre_BOT) * 255 / centre_BOT);
     results[1] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }

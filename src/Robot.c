@@ -10,12 +10,17 @@
 #define PIN_PWM_ML PB5 // D11 → OC1A (PWM output for left motor)
 #define PIN_PWM_MR PB6 // D12 → OC1B (PWM output for right motor)
 #define PORT_CONTROL PORTA
+#define DDR_CONTROL DDRA
 
 // MOTOR PINS
 #define PIN_ML_F PA0 // D22 → Left motor forward
 #define PIN_ML_R PA1 // D23 → Left motor reverse
 #define PIN_MR_F PA2 // D24 → Right motor forward
 #define PIN_MR_R PA3 // D25 → Right motor reverse
+
+// NEW MOTOR PINS
+#define PIN_ML PA0 // D22 → Left motor
+#define PIN_MR PA1 // D23 → Right motor
 
 // CLOCK COMPLARE FOR PWMs
 #define DUTY_LEFT OCR1A
@@ -112,7 +117,63 @@ void differential_PWM(uint8_t x, uint8_t y) {
   OCR1A = leftPWM;
   OCR1B = rightPWM;
 }
- 
+
+void differential_PWM_init(){
+  // lock motors to off state
+  OCR1A = 0;
+  PORT_CONTROL &= ~(1 << PIN_ML); // LOW
+  OCR1B = 0;
+  PORT_CONTROL &= ~(1 << PIN_MR); // LOW
+}
+
+void differential_PWM_v3(uint8_t* motor_data){
+  /*
+  [0] = left_duty
+  [1] = left_dir
+  [2] = right_duty
+  [3] = right_dir
+
+  dir:
+    2 = forward
+    1 = stationary
+    0 = reverse
+  */
+
+  char msg[20];
+
+  uint16_t left_duty = motor_data[0] * (2000/255.0);
+  uint8_t left_dir = motor_data[1];
+  uint16_t right_duty = motor_data[2] * (2000/255.0);
+  uint8_t right_dir = motor_data[3];
+
+  // sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
+  // serial0_print_string(msg);
+  // sprintf(msg, "R: %d\t%d", right_dir, right_duty);
+  // serial0_print_string(msg);
+
+  if( left_dir == 2) { // Forward
+    OCR1A = left_duty;
+    PORT_CONTROL &= ~(1 << PIN_ML); // LOW
+  } else if ( left_dir == 0 ) { // Reverse
+    OCR1A = 2000 - left_duty;
+    PORT_CONTROL |= (1 << PIN_ML); // HIGH
+  } else { // locked LOW
+    OCR1A = 0;
+    PORT_CONTROL &= ~(1 << PIN_ML); // LOW
+  }
+
+  if( right_dir == 2 ) { // Forward
+    OCR1B = right_duty;
+    PORT_CONTROL &= ~(1 << PIN_MR); // LOW
+  } else if ( right_dir == 0 ) { // Reverse
+    OCR1B = 2000 - right_duty;
+    PORT_CONTROL |= (1 << PIN_MR); // LOW
+  } else { // locked LOW
+    OCR1B = 0;
+    PORT_CONTROL &= ~(1 << PIN_MR); // LOW
+  }
+}
+
 /********************
 Robot Initialization
 - Serial for debug (Serial0)
@@ -122,6 +183,8 @@ Robot Initialization
 ********************/
 void setup() {
   cli();           // Disable interrupts during setup
+  DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R); // only using 2 of these
+  DDR_CONTROL |= (1<<PIN_ML)|(1<<PIN_ML); // to replace the above line
   serial0_init();      // Debug serial
   serial2_init();      // Xbee serial
   milliseconds_init();   // Millisecond timing
@@ -129,6 +192,7 @@ void setup() {
   _delay_ms(20);
   adc_init();        // Analog input (joystick + sensors)
   _delay_ms(20);
+  differential_PWM_init();
   sei();           // Enable interrupts
 }
  
@@ -145,6 +209,8 @@ int main(void) {
   uint8_t dataRX[PACKETSIZE];
   int x_val = 0;
   int y_val = 0;
+  uint8_t motor_d[4];
+
  
   while (1) {
     if (serial2_available()) { // used when controlling via serial
@@ -153,6 +219,8 @@ int main(void) {
       switch (dataRX[0]) {
         case LDR_REQUEST: {
           // Read and respond with LDR values
+          // not currently used
+          // not currently initialized
           int left_LDR_read = adc_read(LEFT_LDR_PIN);
           int right_LDR_read = adc_read(RIGHT_LDR_PIN);
           uint8_t left_light = LDRmap(left_LDR_read);
@@ -163,9 +231,11 @@ int main(void) {
  
         case JOYSTICK_READ: {
           // Use joystick X/Y to update motor control
-          x_val = dataRX[1];
-          y_val = dataRX[2];
-          differential_PWM(x_val, y_val);
+          motor_d[0] = dataRX[1];
+          motor_d[1] = dataRX[2];
+          motor_d[2] = dataRX[3];
+          motor_d[3] = dataRX[4];
+          differential_PWM_v3(motor_d);
           break;
         }
  
@@ -177,6 +247,5 @@ int main(void) {
       }
     }
   }
- 
   return 0;
 }

@@ -3,11 +3,25 @@
 // Lab 8 Controller Micro
 #include "Controller.h"
 #include "motor_control.h"
+
+
 // Joystick Analog Pins (forgot how this works on controller)
-#define PIN_JOYSTICKLEFT_X 0  // ADC0
-#define PIN_JOYSTICKLEFT_Y 1  // ADC1
-#define PIN_JOYSTICKRIGHT_X 2 // ADC2 (unused)
-#define PIN_JOYSTICKRIGHT_Y 3 // ADC3 (unused)
+/*
+Lx = A14 = PK6
+Ly = A15 = PK7
+Rx = A1 = PF1
+Ry = A0 = PF0
+*/
+
+#define PIN_JOYSTICKLEFT_X PK6
+#define PIN_JOYSTICKLEFT_Y PK7
+#define PIN_JOYSTICKRIGHT_X PF1
+#define PIN_JOYSTICKRIGHT_Y PF0
+
+#define PORT_JOYLEFT PORTK
+#define DDR_JOYLEFT DDRK
+#define PORT_JOYRIGHT PORTF
+#define DDR_JOYRIGHT DDRF
 
 // Communication Codes (matches the robot)
 #define LDR_REQUEST  0xA0  // Request light sensor data from robot
@@ -28,9 +42,14 @@ uint8_t mapADC(uint16_t adc_val) {
 // - Initializes ADC and millisecond timing
 void setup() {
   cli();           // Disable interrupts while setting up
-  // serial2_init();      // XBee serial communication
+  serial2_init();      // XBee serial communication
   serial0_init();      // Teminal Serial Monitor
   milliseconds_init();   // For timing control
+  // ADC PINS SET TO INPUT
+  DDR_JOYLEFT &= ~(1<<PIN_JOYSTICKLEFT_X);
+  DDR_JOYLEFT &= ~(1<<PIN_JOYSTICKLEFT_Y);
+  DDR_JOYRIGHT &= ~(1<<PIN_JOYSTICKRIGHT_X);
+  DDR_JOYRIGHT &= ~(1<<PIN_JOYSTICKRIGHT_Y);
   _delay_ms(20);
   adc_init();        // Enable analog input (for joysticks)
   _delay_ms(20);
@@ -42,44 +61,40 @@ void setup() {
 int main(void) {
   setup();  // Init everything
 
-  uint16_t left_x_val;   // Raw ADC reading for joystick X
-  uint16_t left_y_val;   // Raw ADC reading for joystick Y
+  int left_x_val;   // Raw ADC reading for joystick X
+  int left_y_val;   // Raw ADC reading for joystick Y
   uint32_t lastSend = 0;   // Last time a packet was sent
 
-  char msg[20]; // serial string
+  char msg[30]; // serial string
   uint8_t motor_d[4]; // converted motor data
   int debug_data[5]; // debug data from "motor_data_conversion"
 
   while (1) {
     // Check if 20ms has passed since last send
     // This limits packet rate to 50Hz (fast, but not overwhelming)
-    if (milliseconds_now() - lastSend >= 2000) {
+    if (milliseconds_now() - lastSend >= 20) {
       lastSend = milliseconds_now();
  
       // Read left joystick (X = turn, Y = forward/backward)
       left_x_val = adc_read(PIN_JOYSTICKRIGHT_X);
-      left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y);
+      left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y); 
+      // left_y_val = adc_read(PIN_JOYSTICKLEFT_Y); 
  
-      // Send joystick data as a 3-byte command packet:
-      // [Command Code, X value, Y value]
-      sprintf(msg, "Joy L: %d\nJoy R: %d\n", left_x_val, left_y_val);
+      sprintf(msg, "\nNEW\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
       serial0_print_string(msg);
-
-      motor_data_conversion(left_x_val, left_y_val, motor_d, debug_data);
-
+      
+      motor_data_conversion(left_y_val, left_x_val, motor_d, debug_data);
+      
       // debugging - print to terminal
-      sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
+      sprintf(msg, "\nL: %d : %d\n", motor_d[1], motor_d[0]);
       serial0_print_string(msg);
       sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
       serial0_print_string(msg);
-      sprintf(msg, "%d : %d\n%d : %d\n", debug_data[0], debug_data[1], debug_data[2], debug_data[3]);
-      serial0_print_string(msg);
-      sprintf(msg, "turn dir: %d\n\n", debug_data[4]);
-      serial0_print_string(msg);
-      // serial2_write_bytes(3, JOYSTICK_READ, mapADC(left_x_val), mapADC(left_y_val));
+      
+      // Send joystick data as a 5-byte command packet:
+      serial2_write_bytes(5, JOYSTICK_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
     }
   }
- 
   return 0;
 }
 
