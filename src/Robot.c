@@ -211,6 +211,8 @@ int main(void) {
   int y_val = 0;
   uint8_t motor_d[4];
 
+  char msg[30];
+  uint32_t lastSend = 0;   // Last time a packet was sent
  
   while (1) {
     if (serial2_available()) { // used when controlling via serial
@@ -245,6 +247,13 @@ int main(void) {
           break;
         }
       }
+    }
+    if (milliseconds_now() - lastSend >= 500) {
+      lastSend = milliseconds_now();
+      sprintf(msg, "\nL: %d : %d\n", motor_d[1], motor_d[0]);
+      serial0_print_string(msg);
+      sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
+      serial0_print_string(msg);
     }
   }
   return 0;

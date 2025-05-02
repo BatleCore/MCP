@@ -156,7 +156,7 @@ int main(void) {
 
   int joy_L;
   int joy_R;
-  char msg[30];
+  char msg[30];  
   uint8_t motor_data[4]; // stores converted motor data. typically recieved from serial Controller
   int debug_data[5]; // debug data from "motor_data_conversion"
   uint32_t lastSend = 0;   // time record for loop
