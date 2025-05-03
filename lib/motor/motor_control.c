@@ -6,7 +6,7 @@
 void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
 {
   static float hyst = 0.1;
-  static float turning_cap = 0.33;
+  static float turning_cap = 1;
 
   /* Initialization */
   // top value = 1023
@@ -97,19 +97,19 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
   if (turn_direction == 0) // toggle [0, 1] to correct direction
   {
     // Left side slower
-    results[0] = abs((slow_side - centre_BOT) * 255 / centre_BOT);
+    results[0] = abs((slow_side - centre_BOT) * 250 / centre_BOT);
     results[1] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
     // right side faster
-    results[2] = abs((fast_side - centre_BOT) * 255 / centre_BOT);
+    results[2] = abs((fast_side - centre_BOT) * 250 / centre_BOT);
     results[3] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }
   else
   {
     // left side faster
-    results[2] = abs((slow_side - centre_BOT) * 255 / centre_BOT);
+    results[2] = abs((slow_side - centre_BOT) * 250 / centre_BOT);
     results[3] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
     // right side slower
-    results[0] = abs((fast_side - centre_BOT) * 255 / centre_BOT);
+    results[0] = abs((fast_side - centre_BOT) * 250 / centre_BOT);
     results[1] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }
   bug[0] = slow_side;

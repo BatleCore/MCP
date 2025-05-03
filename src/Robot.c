@@ -12,6 +12,15 @@
 #define PORT_CONTROL PORTA
 #define DDR_CONTROL DDRA
 
+// BATTERY SENSOR
+#define PIN_BATTERY_SENSE PF0
+#define PIN_BATTERY_LED PA4
+#define DDR_BATTERY_LED DDRA
+#define PORT_BATTERY PORTA
+#define PORT_ADC PORTF
+#define DDR_ADC DDRF
+#define BATTERY_THRESH 300
+
 // MOTOR PINS
 #define PIN_ML_F PA0 // D22 → Left motor forward
 #define PIN_ML_R PA1 // D23 → Left motor reverse
@@ -141,36 +150,39 @@ void differential_PWM_v3(uint8_t* motor_data){
 
   char msg[20];
 
-  uint16_t left_duty = motor_data[0] * (2000/255.0);
+  uint16_t left_duty = 1500 + (motor_data[0]) * (500/250.0);
   uint8_t left_dir = motor_data[1];
-  uint16_t right_duty = motor_data[2] * (2000/255.0);
+  uint16_t right_duty = 1500 + (motor_data[2]) * (500/250.0);
   uint8_t right_dir = motor_data[3];
 
   // sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
   // serial0_print_string(msg);
   // sprintf(msg, "R: %d\t%d", right_dir, right_duty);
   // serial0_print_string(msg);
-
+  // sprintf(msg, "L: %u  \t %u \n", left_duty, right_duty);
+  // serial0_print_string(msg);
+  OCR1A = left_duty;
   if( left_dir == 2) { // Forward
-    OCR1A = left_duty;
-    PORT_CONTROL &= ~(1 << PIN_ML); // LOW
+    PORT_CONTROL &= ~(1 << PIN_ML_R);
+    PORT_CONTROL |= (1 << PIN_ML_F);
   } else if ( left_dir == 0 ) { // Reverse
-    OCR1A = 2000 - left_duty;
-    PORT_CONTROL |= (1 << PIN_ML); // HIGH
+    PORT_CONTROL |= (1 << PIN_ML_R);
+    PORT_CONTROL &= ~(1 << PIN_ML_F);
   } else { // locked LOW
-    OCR1A = 0;
-    PORT_CONTROL &= ~(1 << PIN_ML); // LOW
+    PORT_CONTROL &= ~(1 << PIN_ML_R);
+    PORT_CONTROL &= ~(1 << PIN_ML_F);
   }
 
+  OCR1B = right_duty;
   if( right_dir == 2 ) { // Forward
-    OCR1B = right_duty;
-    PORT_CONTROL &= ~(1 << PIN_MR); // LOW
+    PORT_CONTROL &= ~(1 << PIN_MR_R);
+    PORT_CONTROL |= (1 << PIN_MR_F);
   } else if ( right_dir == 0 ) { // Reverse
-    OCR1B = 2000 - right_duty;
-    PORT_CONTROL |= (1 << PIN_MR); // LOW
+    PORT_CONTROL |= (1 << PIN_MR_R);
+    PORT_CONTROL &= ~(1 << PIN_MR_F);
   } else { // locked LOW
-    OCR1B = 0;
-    PORT_CONTROL &= ~(1 << PIN_MR); // LOW
+    PORT_CONTROL &= ~(1 << PIN_MR_R);
+    PORT_CONTROL &= ~(1 << PIN_MR_F);
   }
 }
 
@@ -185,6 +197,12 @@ void setup() {
   cli();           // Disable interrupts during setup
   DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R); // only using 2 of these
   DDR_CONTROL |= (1<<PIN_ML)|(1<<PIN_ML); // to replace the above line
+
+  DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED); // 
+  // DDR_ADC &= ~(1<<PIN_BATTERY_SENSE); // battery pin ADC
+
+  PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);
+
   serial0_init();      // Debug serial
   serial2_init();      // Xbee serial
   milliseconds_init();   // Millisecond timing
@@ -210,11 +228,22 @@ int main(void) {
   int x_val = 0;
   int y_val = 0;
   uint8_t motor_d[4];
+  motor_d[0] = 0;
+  motor_d[1] = 0;
+  motor_d[2] = 0;
+  motor_d[3] = 0;
+  int adc_bat_val = 0;
 
   char msg[30];
   uint32_t lastSend = 0;   // Last time a packet was sent
  
   while (1) {
+    adc_bat_val = adc_read(PIN_BATTERY_SENSE);
+    if (adc_bat_val < BATTERY_THRESH) {
+      PORT_BATTERY |= (1<<PIN_BATTERY_LED);
+    } else {
+      PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);
+    }
     if (serial2_available()) { // used when controlling via serial
       serial2_get_data(dataRX, PACKETSIZE);
  
@@ -250,9 +279,11 @@ int main(void) {
     }
     if (milliseconds_now() - lastSend >= 500) {
       lastSend = milliseconds_now();
-      sprintf(msg, "\nL: %d : %d\n", motor_d[1], motor_d[0]);
-      serial0_print_string(msg);
-      sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
+      // sprintf(msg, "\nL: %d : %d\n", motor_d[1], motor_d[0]);
+      // serial0_print_string(msg);
+      // sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
+      // serial0_print_string(msg);
+      sprintf(msg, "Battery reading:%d\n", adc_bat_val);
       serial0_print_string(msg);
     }
   }

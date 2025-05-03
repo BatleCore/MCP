@@ -64,6 +64,7 @@ int main(void) {
   int left_x_val;   // Raw ADC reading for joystick X
   int left_y_val;   // Raw ADC reading for joystick Y
   uint32_t lastSend = 0;   // Last time a packet was sent
+  uint32_t lastSend_debug = 0;   // Last time a packet was sent
 
   char msg[30]; // serial string
   uint8_t motor_d[4]; // converted motor data
@@ -80,19 +81,24 @@ int main(void) {
       left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y); 
       // left_y_val = adc_read(PIN_JOYSTICKLEFT_Y); 
  
-      sprintf(msg, "\nNEW\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
-      serial0_print_string(msg);
+      // sprintf(msg, "\nNEW\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
+      // serial0_print_string(msg);
       
       motor_data_conversion(left_y_val, left_x_val, motor_d, debug_data);
       
+      // Send joystick data as a 5-byte command packet:
+      serial2_write_bytes(5, JOYSTICK_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
+    }
+    if (milliseconds_now() - lastSend_debug >= 200) {
+      lastSend_debug = milliseconds_now();
+      
+      sprintf(msg, "\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
+      serial0_print_string(msg);
       // debugging - print to terminal
-      sprintf(msg, "\nL: %d : %d\n", motor_d[1], motor_d[0]);
+      sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
       serial0_print_string(msg);
       sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
       serial0_print_string(msg);
-      
-      // Send joystick data as a 5-byte command packet:
-      serial2_write_bytes(5, JOYSTICK_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
     }
   }
   return 0;
