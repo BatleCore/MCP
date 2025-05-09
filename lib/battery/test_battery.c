@@ -1,42 +1,47 @@
-// ADC LED BATERRY LEVEL INDICATOR
+//BATTERY VOLTAGE MONITORING
 
 #include "test_battery.h"
 
+// BATTERY SENSOR PORTS & PINS
+#define PIN_BATTERY_SENSE PF0 // ADC pin
 
-// BATTERY SENSOR
-#define PIN_BATTERY_SENSE PF0
-#define PORT_ADC PORTF
-#define DDR_ADC DDRF
-
-#define PIN_BATTERY_LED PA4
-#define PORT_BATTERY PORTA
+#define PORT_BATTERY PORTA  
 #define DDR_BATTERY_LED DDRA
+#define PIN_BATTERY_LED PA4   // Indicator LED digital output
 
-#define BATTERY_THRESH 950 // seems to trip at 7.4v supply..?
+#define BATTERY_THRESH 950    // seems to trip at 7.4v supply..?
+uint16_t bat_val;             // stores battery voltage reading
 
-void send_ADC_to_serial(){
-  adc_init();        // Analog input (joystick + sensors)
-  _delay_ms(20);
-  serial0_init();
+void battery_init() {
+  adc_init();                               // initialise ADC
+  _delay_ms(20);                            // delay for safety
 
-  // output
-  DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED); // output HIGH
-  PORT_BATTERY &= ~(1<<PIN_BATTERY_LED); // default LOW
+  DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED);  // Configure digital output for LED control
+  PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);    // Initalise as off
+}
 
-  uint16_t bat_val;
-  char msg[20];
+void monitorBattery() {                      
 
-  while(1) {
-    bat_val = adc_read(PIN_BATTERY_SENSE);
+  bat_val = adc_read(PIN_BATTERY_SENSE);    // get adc reading
 
-    if (bat_val < BATTERY_THRESH) {
-      PORT_BATTERY |= (1<<PIN_BATTERY_LED);
-    } else {
-      PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);
-    }
-
-    sprintf(msg, "%d\n", bat_val);
-    serial0_print_string(msg);
+  if (bat_val < BATTERY_THRESH) {
+    PORT_BATTERY &= ~(1<<PIN_BATTERY_LED); // Voltage < 7V, flash LED 5 times a second
     _delay_ms(200);
+    PORT_BATTERY |= (1<<PIN_BATTERY_LED);   
+  } else {
+    PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);  // Voltage > 7V, turn LED off
   }
+}
+
+void testBattery() {
+  // Monitor the battery
+  monitorBattery();
+
+  // Initialise serial
+  serial0_init();
+  char msg[20];
+  
+  // Send to PC serial for debugging
+  sprintf(msg, "%d\n", bat_val);            
+  serial0_print_string(msg);
 }

@@ -1,5 +1,5 @@
-#ifndef TEST_BATTERY_H_
-#define TEST_BATTERY_H_
+#ifndef LIGHT_SENSOR_H_
+#define LIGHT_SENSOR_H_
 
 //include standard libraries
 #include <avr/io.h>
@@ -15,9 +15,6 @@
 #include "milliseconds.h" //milliseconds timekeeping lib
 #include "hd44780.h" //LCD lib
 
-void battery_init();
-void monitorBattery();
-void testBattery();
 
 
 #endif
