@@ -12,7 +12,7 @@
 #define PORT_BATTERY PORTA
 #define DDR_BATTERY_LED DDRA
 
-#define BATTERY_THRESH 770
+#define BATTERY_THRESH 950 // seems to trip at 7.4v supply..?
 
 void send_ADC_to_serial(){
   adc_init();        // Analog input (joystick + sensors)
