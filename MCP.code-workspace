@@ -2,20 +2,13 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"name": "mcp-vs-main",
-			"path": "../../../../../../../Documents/Corey/Uni/mcp-vs-main"
-		},
-		{
-			"name": "MCP",
-			"path": "../../../../../../../Documents/Corey/Uni/MCP"
 		}
 	],
 	"settings": {
 		"files.associations": {
 			"milliseconds.h": "c",
-			"adc.h": "c"
+			"adc.h": "c",
+			"robot.h": "c"
 		}
 	}
 }
