@@ -3,6 +3,24 @@
 #include <stdio.h>
 #include <stdint.h>
 
+void motor_init() {
+  // Set PWM timer for motors
+  TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
+  TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
+  ICR1 = 2000;              // Set TOP for 500Hz
+  OCR1A = 0;
+  OCR1B = 0;
+  DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
+
+  // lock motors to off state
+  OCR1A = 0;
+  PORT_CONTROL &= ~(1 << PIN_ML_F); // LOW
+  PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
+  OCR1B = 0;
+  PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
+  PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+}
+
 void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
 {
   static float hyst = 0.1;
@@ -121,3 +139,89 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
   // return pointer to first arrary location
   // return *results[0];
 }
+
+void differential_PWM_v3(uint8_t* motor_data){
+  /*
+  [0] = left_duty
+  [1] = left_dir
+  [2] = right_duty
+  [3] = right_dir
+
+  dir:
+    2 = forward
+    1 = stationary
+    0 = reverse
+  */
+
+  // char msg[20];
+
+  // uint16_t left_duty = 1500 + (motor_data[0]) * (500/250.0);
+  // uint8_t left_dir = motor_data[1];
+  // uint16_t right_duty = 1500 + (motor_data[2]) * (500/250.0);
+  // uint8_t right_dir = motor_data[3];
+
+  uint16_t left_duty = (motor_data[0]) * (200/250.0);
+  uint8_t left_dir = motor_data[1];
+  uint16_t right_duty =(motor_data[2]) * (200/250.0);
+  uint8_t right_dir = motor_data[3];
+
+  // sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
+  // serial0_print_string(msg);
+  // sprintf(msg, "R: %d\t%d", right_dir, right_duty);
+  // serial0_print_string(msg);
+  // sprintf(msg, "L: %u  \t %u \n", left_duty, right_duty);
+  // serial0_print_string(msg);
+  OCR1A = left_duty;
+  if( left_dir == 2) { // Forward
+    PORT_CONTROL &= ~(1 << PIN_ML_R);
+    PORT_CONTROL |= (1 << PIN_ML_F);
+  } else if ( left_dir == 0 ) { // Reverse
+    PORT_CONTROL |= (1 << PIN_ML_R);
+    PORT_CONTROL &= ~(1 << PIN_ML_F);
+  } else { // locked LOW
+    PORT_CONTROL &= ~(1 << PIN_ML_R);
+    PORT_CONTROL &= ~(1 << PIN_ML_F);
+  }
+
+  OCR1B = right_duty;
+  if( right_dir == 2 ) { // Forward
+    PORT_CONTROL &= ~(1 << PIN_MR_R);
+    PORT_CONTROL |= (1 << PIN_MR_F);
+  } else if ( right_dir == 0 ) { // Reverse
+    PORT_CONTROL |= (1 << PIN_MR_R);
+    PORT_CONTROL &= ~(1 << PIN_MR_F);
+  } else { // locked LOW
+    PORT_CONTROL &= ~(1 << PIN_MR_R);
+    PORT_CONTROL &= ~(1 << PIN_MR_F);
+  }
+}
+
+void motor_test() {
+  static int init = 1;
+  if(init) {
+    motor_init();
+    init = 0;
+  }
+  uint8_t motor_data[4];
+  motor_data[0] = 0;
+  motor_data[1] = 2;
+  motor_data[2] = 0;
+  motor_data[3] = 2;
+  
+  // for(int i = 0; i< 250; i++){
+  //   motor_data[0] = i;
+  //   motor_data[2] = i;
+  //   differential_PWM_v3(motor_data);
+  //   _delay_ms(50);
+  // }
+  motor_data[0] = 200;
+  motor_data[1] = 2;
+  motor_data[2] = 200;
+  motor_data[3] = 2;
+  differential_PWM_v3(motor_data);
+  while(1){
+
+  }
+
+}
+

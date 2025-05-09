@@ -8,7 +8,8 @@
 		"files.associations": {
 			"milliseconds.h": "c",
 			"adc.h": "c",
-			"robot.h": "c"
+			"robot.h": "c",
+			"delay.h": "c"
 		}
 	}
 }
