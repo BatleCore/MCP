@@ -6,6 +6,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include "serial.h"
 
 // MOTOR PINS
 #define PIN_ML_F PA0 // D22 → Left motor forward
@@ -25,9 +26,15 @@
 #define PORT_CONTROL PORTA
 #define DDR_CONTROL DDRA
 
+// NEW MOTOR PINS
+#define PIN_ML PA0 // D22 → Left motor
+#define PIN_MR PA1 // D23 → Right motor
+
 void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug);
 void motor_init();
 void differential_PWM_v3(uint8_t* motor_data);
 void motor_test();
+void timerPWM_init();
+void differential_PWM_init();
 
 #endif

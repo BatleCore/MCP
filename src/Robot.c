@@ -1,5 +1,6 @@
 // Lab 8 Robot Micro
 #include "Robot.h"
+#include "motor_control.h"
  
 // Constants
 #define PACKETSIZE 6  // Max serial packet size we expect
@@ -44,25 +45,7 @@
 #define LEFT_LDR_PIN 0
 #define RIGHT_LDR_PIN 1
  
-/********************
-Timer1 PWM Setup
-Phase and Frequency Correct PWM Mode (mode 8)
-Prescaler = 8, ICR1 = 2000 → 500Hz PWM frequency
-Used for motor speed control
-********************/
-void timerPWM_init() {
-  /*
-  PWM MAX = 2000
-  PWM freq = 500Hz
-  PWM period = 2ms
-  */
-  TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
-  TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
-  ICR1 = 2000;              // Set TOP for 500Hz
-  OCR1A = 0;
-  OCR1B = 0;
-  DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
-}
+
  
 // Scale raw LDR reading (0–1023) to 0–255
 uint8_t LDRmap(int reading) {
@@ -127,64 +110,6 @@ void differential_PWM(uint8_t x, uint8_t y) {
   OCR1B = rightPWM;
 }
 
-void differential_PWM_init(){
-  // lock motors to off state
-  OCR1A = 0;
-  PORT_CONTROL &= ~(1 << PIN_ML); // LOW
-  OCR1B = 0;
-  PORT_CONTROL &= ~(1 << PIN_MR); // LOW
-}
-
-void differential_PWM_v3(uint8_t* motor_data){
-  /*
-  [0] = left_duty
-  [1] = left_dir
-  [2] = right_duty
-  [3] = right_dir
-
-  dir:
-    2 = forward
-    1 = stationary
-    0 = reverse
-  */
-
-  char msg[20];
-
-  uint16_t left_duty = 1500 + (motor_data[0]) * (500/250.0);
-  uint8_t left_dir = motor_data[1];
-  uint16_t right_duty = 1500 + (motor_data[2]) * (500/250.0);
-  uint8_t right_dir = motor_data[3];
-
-  // sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
-  // serial0_print_string(msg);
-  // sprintf(msg, "R: %d\t%d", right_dir, right_duty);
-  // serial0_print_string(msg);
-  // sprintf(msg, "L: %u  \t %u \n", left_duty, right_duty);
-  // serial0_print_string(msg);
-  OCR1A = left_duty;
-  if( left_dir == 2) { // Forward
-    PORT_CONTROL &= ~(1 << PIN_ML_R);
-    PORT_CONTROL |= (1 << PIN_ML_F);
-  } else if ( left_dir == 0 ) { // Reverse
-    PORT_CONTROL |= (1 << PIN_ML_R);
-    PORT_CONTROL &= ~(1 << PIN_ML_F);
-  } else { // locked LOW
-    PORT_CONTROL &= ~(1 << PIN_ML_R);
-    PORT_CONTROL &= ~(1 << PIN_ML_F);
-  }
-
-  OCR1B = right_duty;
-  if( right_dir == 2 ) { // Forward
-    PORT_CONTROL &= ~(1 << PIN_MR_R);
-    PORT_CONTROL |= (1 << PIN_MR_F);
-  } else if ( right_dir == 0 ) { // Reverse
-    PORT_CONTROL |= (1 << PIN_MR_R);
-    PORT_CONTROL &= ~(1 << PIN_MR_F);
-  } else { // locked LOW
-    PORT_CONTROL &= ~(1 << PIN_MR_R);
-    PORT_CONTROL &= ~(1 << PIN_MR_F);
-  }
-}
 
 /********************
 Robot Initialization
@@ -195,9 +120,6 @@ Robot Initialization
 ********************/
 void setup() {
   cli();           // Disable interrupts during setup
-  DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R); // only using 2 of these
-  DDR_CONTROL |= (1<<PIN_ML)|(1<<PIN_ML); // to replace the above line
-
   DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED); // 
   // DDR_ADC &= ~(1<<PIN_BATTERY_SENSE); // battery pin ADC
 
@@ -205,8 +127,11 @@ void setup() {
 
   serial0_init();      // Debug serial
   serial2_init();      // Xbee serial
+
+  motor_init();
+
   milliseconds_init();   // Millisecond timing
-  timerPWM_init();     // Timer1 PWM setup
+  // timerPWM_init();     // Timer1 PWM setup
   _delay_ms(20);
   adc_init();        // Analog input (joystick + sensors)
   _delay_ms(20);
@@ -238,12 +163,15 @@ int main(void) {
   uint32_t lastSend = 0;   // Last time a packet was sent
  
   while (1) {
+    // Battery Reading
     adc_bat_val = adc_read(PIN_BATTERY_SENSE);
     if (adc_bat_val < BATTERY_THRESH) {
       PORT_BATTERY |= (1<<PIN_BATTERY_LED);
     } else {
       PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);
     }
+
+    // Receive Serial Coms
     if (serial2_available()) { // used when controlling via serial
       serial2_get_data(dataRX, PACKETSIZE);
  
@@ -277,6 +205,8 @@ int main(void) {
         }
       }
     }
+
+    // Serial debug at interval
     if (milliseconds_now() - lastSend >= 500) {
       lastSend = milliseconds_now();
       // sprintf(msg, "\nL: %d : %d\n", motor_d[1], motor_d[0]);
@@ -286,6 +216,7 @@ int main(void) {
       sprintf(msg, "Battery reading:%d\n", adc_bat_val);
       serial0_print_string(msg);
     }
+
   }
   return 0;
 }

@@ -4,6 +4,9 @@
 #include <stdint.h>
 
 void motor_init() {
+  // set motor output pins
+  DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R); // only using 2 of these
+
   // Set PWM timer for motors
   TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
   TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
@@ -19,6 +22,7 @@ void motor_init() {
   OCR1B = 0;
   PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
   PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+
 }
 
 void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
@@ -153,22 +157,23 @@ void differential_PWM_v3(uint8_t* motor_data){
     0 = reverse
   */
 
-  // char msg[20];
+  char msg[20];
 
   // uint16_t left_duty = 1500 + (motor_data[0]) * (500/250.0);
   // uint8_t left_dir = motor_data[1];
   // uint16_t right_duty = 1500 + (motor_data[2]) * (500/250.0);
   // uint8_t right_dir = motor_data[3];
 
-  uint16_t left_duty = (motor_data[0]) * (200/250.0);
+  // uint16_t left_duty = 1500 + (motor_data[0]) * (500/250.0);
+  uint16_t left_duty = 1750 + (motor_data[0]);
   uint8_t left_dir = motor_data[1];
-  uint16_t right_duty =(motor_data[2]) * (200/250.0);
+  uint16_t right_duty = 1750 + (motor_data[2]);
   uint8_t right_dir = motor_data[3];
 
-  // sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
-  // serial0_print_string(msg);
-  // sprintf(msg, "R: %d\t%d", right_dir, right_duty);
-  // serial0_print_string(msg);
+  sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
+  serial0_print_string(msg);
+  sprintf(msg, "R: %d\t%d\n", right_dir, right_duty);
+  serial0_print_string(msg);
   // sprintf(msg, "L: %u  \t %u \n", left_duty, right_duty);
   // serial0_print_string(msg);
   OCR1A = left_duty;
@@ -179,6 +184,7 @@ void differential_PWM_v3(uint8_t* motor_data){
     PORT_CONTROL |= (1 << PIN_ML_R);
     PORT_CONTROL &= ~(1 << PIN_ML_F);
   } else { // locked LOW
+    OCR1A = 0;
     PORT_CONTROL &= ~(1 << PIN_ML_R);
     PORT_CONTROL &= ~(1 << PIN_ML_F);
   }
@@ -191,12 +197,14 @@ void differential_PWM_v3(uint8_t* motor_data){
     PORT_CONTROL |= (1 << PIN_MR_R);
     PORT_CONTROL &= ~(1 << PIN_MR_F);
   } else { // locked LOW
+    OCR1B = 0;
     PORT_CONTROL &= ~(1 << PIN_MR_R);
     PORT_CONTROL &= ~(1 << PIN_MR_F);
   }
 }
 
 void motor_test() {
+  serial0_init();
   static int init = 1;
   if(init) {
     motor_init();
@@ -208,16 +216,16 @@ void motor_test() {
   motor_data[2] = 0;
   motor_data[3] = 2;
   
-  // for(int i = 0; i< 250; i++){
-  //   motor_data[0] = i;
-  //   motor_data[2] = i;
-  //   differential_PWM_v3(motor_data);
-  //   _delay_ms(50);
-  // }
-  motor_data[0] = 200;
-  motor_data[1] = 2;
-  motor_data[2] = 200;
-  motor_data[3] = 2;
+  for(uint8_t i = 0; i< 250; i++){
+    motor_data[0] = i;
+    motor_data[2] = i;
+    differential_PWM_v3(motor_data);
+    _delay_ms(50);
+  }
+  motor_data[0] = 0;
+  motor_data[1] = 1;
+  motor_data[2] = 0;
+  motor_data[3] = 1;
   differential_PWM_v3(motor_data);
   while(1){
 
@@ -225,3 +233,37 @@ void motor_test() {
 
 }
 
+/********************
+Timer1 PWM Setup
+Phase and Frequency Correct PWM Mode (mode 8)
+Prescaler = 8, ICR1 = 2000 → 500Hz PWM frequency
+Used for motor speed control
+********************/
+void timerPWM_init() {
+  /*
+  PWM MAX = 2000
+  PWM freq = 500Hz
+  PWM period = 2ms
+  */
+  TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
+  TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
+  ICR1 = 2000;              // Set TOP for 500Hz
+  OCR1A = 0;
+  OCR1B = 0;
+  DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
+}
+
+void differential_PWM_init(){
+  TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
+  TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
+  ICR1 = 2000;              // Set TOP for 500Hz
+  OCR1A = 0;
+  OCR1B = 0;
+  DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
+  
+  // lock motors to off state
+  OCR1A = 0;
+  PORT_CONTROL &= ~(1 << PIN_ML); // LOW
+  OCR1B = 0;
+  PORT_CONTROL &= ~(1 << PIN_MR); // LOW
+}
