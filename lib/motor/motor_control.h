@@ -1,5 +1,7 @@
 #ifndef MOTOR_CONTROL_H
 #define MOTOR_CONTROL_H
+
+//include standard libraries
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +9,13 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "serial.h"
+
+//include provided header files
+
+//include custom header files
+#include "PIN_ASSIGNMENT.h"
+
+//constants
 
 // MOTOR PINS
 #define PIN_ML_F PA0 // D22 → Left motor forward
@@ -30,6 +39,7 @@
 #define PIN_ML PA0 // D22 → Left motor
 #define PIN_MR PA1 // D23 → Right motor
 
+//functions
 void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug);
 void motor_init();
 void differential_PWM_v3(uint8_t* motor_data);
