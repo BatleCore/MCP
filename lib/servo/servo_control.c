@@ -16,6 +16,11 @@ void servo_init() {
   ICR3 = 20000;              // Set TOP for 500Hz
   OCR3A = SERVO_PULSE_OPEN;
   DDR_SERVO|= (1 << PIN_SERVO); // Set PWM pins as output
+  gripper_toggle();
+  _delay_ms(300);
+  gripper_toggle();
+  _delay_ms(300);
+  gripper_toggle();
 }
 
 void servo_set_pos(uint16_t pos) {
@@ -52,7 +57,7 @@ void servo_callibration(void) {
 }
 
 void gripper_toggle() {
-  static int gripper_state = 0; // 0: copen, 1: closed
+  static int gripper_state = 1; // 0: open, 1: closed
 
   if (gripper_state) { // if closed
     // open it

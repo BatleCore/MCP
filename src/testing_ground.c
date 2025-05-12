@@ -7,7 +7,7 @@ int main(void) {
   motor_init();
   servo_init();
 
-  dist_sensor_test(PIN_DISTANCE_CENT);
+  dist_sensor_test();
 
   return 0;
 }
