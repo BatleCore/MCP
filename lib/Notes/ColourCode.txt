@@ -1,0 +1,6 @@
+BLUE - Analog
+WHITE - Digital
+YELLOW - PWM
+RED - +5v
+ORANGE - +BATv
+BLACK - Gnd
