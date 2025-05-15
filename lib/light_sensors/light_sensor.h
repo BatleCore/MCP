@@ -9,11 +9,15 @@
 #include <util/delay.h>
 #include <stdio.h>
 
-//include header files
+//include provided header files
 #include "serial.h" //minimal serial lib
 #include "adc.h" //minimal adc lib
 #include "milliseconds.h" //milliseconds timekeeping lib
 #include "hd44780.h" //LCD lib
+
+//include custom header files
+
+//constants
 
 
 

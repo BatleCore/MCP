@@ -1,7 +1,3 @@
-//Example ATmega2560 Project
-//File: ATmega2560Project.h
-//Author: Robert Howie
-
 #ifndef CONTROLLER_H_ //double inclusion guard
 #define CONTROLLER_H_
 
@@ -14,11 +10,14 @@
 #include <stdio.h>
 #include <string.h>
 
-//include header files
+//include provided header files
 #include "serial.h" //minimal serial lib
 #include "adc.h" //minimal adc lib
 #include "milliseconds.h" //milliseconds timekeeping lib
-// #include "hd44780.h" //LCD lib
+#include "hd44780.h" //LCD lib
+
+//include custom header files
+#include "PIN_ASSIGNMENT.h"
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
@@ -30,4 +29,4 @@ void USART2_init();
 void send_packet(uint8_t* data);
 
 
-#endif /* ATMEGA2560_H_ */
+#endif

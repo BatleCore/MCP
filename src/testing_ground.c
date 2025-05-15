@@ -1,11 +1,13 @@
 #include "test_battery.h"
 #include "motor_control.h"
+#include "servo_control.h"
+#include "dist_sensor.h"
 
 int main(void) {
-  // send_ADC_to_serial();
+  motor_init();
+  servo_init();
 
-
-  motor_test();
+  dist_sensor_test();
 
   return 0;
 }
