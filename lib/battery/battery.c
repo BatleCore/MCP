@@ -1,6 +1,6 @@
 //BATTERY VOLTAGE MONITORING
 
-#include "test_battery.h"
+#include "battery.h"
 
 // BATTERY SENSOR PORTS & PINS
 #define PIN_BATTERY_SENSE PF0 // ADC pin

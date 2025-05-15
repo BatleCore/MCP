@@ -13,10 +13,8 @@ void motor_init() {
   DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
 
   // lock motors to off state
-  OCR1A = 0;
   PORT_CONTROL &= ~(1 << PIN_ML_F); // LOW
   PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
-  OCR1B = 0;
   PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
   PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
 }
