@@ -10,6 +10,10 @@ void battery_init() {
   sei(); // enable global ISRs
 }
 
+uint8_t mapBatVoltage(uint16_t adc_value) {
+    return (adc_value * 84) / 1023;
+}
+
 ISR(TIMER3_COMPA_vect) {
   battery_check_counter ++; // counter to check battery once per second
   battery_flash_counter++;

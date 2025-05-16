@@ -28,10 +28,15 @@
 #define PROXIMITY_THRESHOLD 900 // ADC value to trigger "close enough" detection
 
 // === Global Variables ===
+extern int16_t last_signal;
+extern volatile bool new_sample_ready;
+extern volatile uint16_t leftLDR;
+extern volatile uint16_t rightLDR;
 
 // === Functions ===
 void LDR_init(void);
 uint16_t getFrequency(uint16_t adc, uint8_t channel);
 void seekBeacon(uint16_t leftLDR, uint16_t rightLDR);
+void LDR_test(void);
 
 #endif /* LIGHT_SENSOR_H_ */

@@ -6,12 +6,12 @@
 // INPUTS - DIGITAL
 
 // INPUTS - ANALOG
-#define PIN_BATTERY_SENSE PF0 // D54
-#define PIN_LDR_LEFT PF1 // D55
-#define PIN_LDR_RIGHT PF2 // D56
-#define PIN_DISTANCE_LEFT PF3 // D57
-#define PIN_DISTANCE_CENT PF4 // D58
-#define PIN_DISTANCE_RIGHT PF5 // D59
+#define PIN_BATTERY_SENSE 0 // D54
+#define PIN_LDR_LEFT 1 // D55
+#define PIN_LDR_RIGHT 2 // D56
+#define PIN_DISTANCE_LEFT 3 // D57
+#define PIN_DISTANCE_CENT 4 // D58
+#define PIN_DISTANCE_RIGHT 5 // D59
 
 // OUTPUTS - DIGITAL
 #define PIN_ML_F PA0 // D22 → Left motor forward
