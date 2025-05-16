@@ -1,8 +1,10 @@
 // controller display lib
 #include "controller_display.h"
 
+volatile ScreenState currentScreen = SCREEN_HOME;
 
 void display_init() {
+    lcd_init();
     DDRD &= ~(1 << PD0);
     PORTD |= (1 << PD0);
     // Enable INT0 on falling edge (button press)
@@ -58,6 +60,9 @@ void test_LCD(ScreenState screen) {
         case SCREEN_RANGE:
             lcd_puts("Range Sensors");
             break;
+        case SCREEN_COUNT:
+            // do nothing or display error
+            break;
         default:
             lcd_puts("Unknown Screen");
             break;
@@ -65,8 +70,10 @@ void test_LCD(ScreenState screen) {
 }
 
 ISR(INT0_vect) {
+    serial0_print_string("bounce press\n");
     static uint32_t last_press = 0;
     if (milliseconds_now() - last_press > 250) {
+        serial0_print_string("valid press\n");
         currentScreen = (currentScreen + 1) % SCREEN_COUNT;
         last_press = milliseconds_now();
     }
