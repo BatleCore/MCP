@@ -1,8 +1,8 @@
 #include "light_sensor.h"
 
-
-#define PIN_LDR_LEFT PA4
-#define PIN_LDR_RIGHT PA4
+// these are imported with PIN_ASSIGNMENT.h
+// #define PIN_LDR_LEFT PA4
+// #define PIN_LDR_RIGHT PA4
 
 #define SAMPLE_INTERVAL_MS 5  // 200 Hz
 #define THRESHOLD 20          // depends on ADC scale
@@ -54,4 +54,24 @@ uint16_t on_adc_sample(uint16_t adc) {
 
     // Return the frequency (0 if no new edge this sample)
     return freq_fixed;
+}
+
+void LDR_test() {
+    serial0_init();
+    LDR_init();
+    adc_init();
+    _delay_ms(20);
+    uint16_t L_val = 0;
+    uint16_t R_val = 0;
+    char msg[20];
+
+    while (1) {
+        L_val = adc_read(PIN_LDR_LEFT);
+        R_val = adc_read(PIN_LDR_RIGHT);
+        sprintf(msg, "\n\nL: %d\nR: %d", L_val, R_val);
+        serial0_print_string(msg);
+        _delay_ms(250);
+    }
+
+
 }

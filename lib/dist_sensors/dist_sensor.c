@@ -27,13 +27,13 @@ void get_distances(uint16_t* distance_values) {
   uint16_t left_sum = 0;
   uint16_t cent_sum = 0;
   uint16_t right_sum = 0;
-  int samples = 3;
+  int samples = 10;
 
-  for(int i=1; i<samples; i++) {
+  for(int i=0; i<samples; i++) {
     left_sum = left_sum + adc_read(PIN_DISTANCE_LEFT);
     cent_sum = cent_sum + adc_read(PIN_DISTANCE_CENT);
     right_sum = right_sum + adc_read(PIN_DISTANCE_RIGHT);
-    _delay_us(100);
+    _delay_us(50);
   }
   
   // read and convert
@@ -47,20 +47,19 @@ void get_distances(uint16_t* distance_values) {
   distance_values[2] = (distance_values[2] > DIST_SENSOR_MAX_VAL) ? DIST_SENSOR_MAX_ERR : (distance_values[2] < DIST_SENSOR_MIN_VAL) ? DIST_SENSOR_MIN_ERR : distance_values[2];
 }
 
-
 void dist_sensor_test() {
   serial0_init();
   adc_init();
   _delay_ms(20);
 
   uint16_t dists[3];
-  char msg[20];
+  char msg[40];
 
   while ( 1 ) {
     get_distances(dists);
-    sprintf(msg, "\n%d, %d, %d\n", dists[0], dists[1], dists[2]);
+    sprintf(msg, "\n\nLeft:  %d\nCent:  %d\nRight:  %d", dists[0], dists[1], dists[2]);
     serial0_print_string(msg);
-    _delay_ms(100);
+    _delay_ms(200);
 
   }
 }

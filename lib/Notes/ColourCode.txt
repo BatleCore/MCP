@@ -4,3 +4,8 @@ YELLOW - PWM
 RED - +5v
 ORANGE - +BATv
 BLACK - Gnd
+GREEN - Analog ref voltage?
+
+
+
+

@@ -16,9 +16,14 @@
 #include "hd44780.h" //LCD lib
 
 //include custom header files
+#include"PIN_ASSIGNMENT.h"
 
 //constants
 
-
+//functions
+void LDR_init();
+void readLDR();
+uint16_t on_adc_sample(uint16_t adc);
+void LDR_test();
 
 #endif
