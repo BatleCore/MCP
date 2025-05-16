@@ -1,3 +1,4 @@
+#include "battery.h"
 #include "motor_control.h"
 #include "servo_control.h"
 #include "dist_sensor.h"
