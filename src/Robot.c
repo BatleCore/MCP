@@ -40,6 +40,7 @@ void setup() {
   serial2_init();      // Xbee serial
 
   motor_init();
+  servo_init();
 
   milliseconds_init();   // Millisecond timing
   // timerPWM_init();     // Timer1 PWM setup
@@ -70,10 +71,16 @@ int main(void) {
   motor_d[3] = 0;
   int adc_bat_val = 0;
   uint8_t servo_d[2];
+  servo_d[0] = 0;
+  servo_d[1] = 0;
 
   char msg[30];
   uint32_t lastSend = 0;   // Last time a packet was sent
- 
+  
+  
+  
+  sprintf(msg, "SERIAL ACTIVE");
+  serial0_print_string(msg);
   while (1) {
 
     // Receive Serial Coms
@@ -81,17 +88,6 @@ int main(void) {
       serial2_get_data(dataRX, PACKETSIZE);
  
       switch (dataRX[0]) {
-        case LDR_REQUEST: {
-          // Read and respond with LDR values
-          // not currently used
-          // not currently initialized
-          int left_LDR_read = adc_read(PIN_LDR_LEFT);
-          int right_LDR_read = adc_read(PIN_LDR_RIGHT);
-          uint8_t left_light = LDRmap(left_LDR_read);
-          uint8_t right_light = LDRmap(right_LDR_read);
-          serial2_write_bytes(2, left_light, right_light);
-          break;
-        }
  
         case JOYSTICK_MOTOR_READ: {
           // Use joystick X/Y to update motor control
@@ -104,9 +100,12 @@ int main(void) {
         }
 
         case JOYSTICK_SERVO_READ: {
-          servo_d[0] = dataRX[0];
-          servo_d[1] = dataRX[1];
+          servo_d[0] = dataRX[1];
+          servo_d[1] = dataRX[2];
           servo_set_velocity(servo_d);
+          sprintf(msg, "\nvel: %d, dir: %d", servo_d[0], servo_d[1]);
+          serial0_print_string(msg);
+          break;
         }
 
         default: {
@@ -124,7 +123,9 @@ int main(void) {
       // serial0_print_string(msg);
       // sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
       // serial0_print_string(msg);
-      sprintf(msg, "Battery reading:%d\n", adc_bat_val);
+      // sprintf(msg, "Battery reading:%d\n", adc_bat_val);
+      // serial0_print_string(msg);
+      sprintf(msg, "\nvel: %d, dir: %d", servo_d[0], servo_d[1]);
       serial0_print_string(msg);
     }
 

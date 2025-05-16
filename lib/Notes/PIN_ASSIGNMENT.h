@@ -13,8 +13,8 @@
 #define PIN_DISTANCE_CENT PF4 // D58
 #define PIN_DISTANCE_RIGHT PF5 // D59
 
-#define PIN_JOY_L_X PK6
-#define PIN_JOY_L_Y PK7
+#define PIN_JOY_L_X 14 // A14
+#define PIN_JOY_L_Y 15 // A15
 #define PIN_JOY_R_X PF1
 #define PIN_JOY_R_Y PF0
 

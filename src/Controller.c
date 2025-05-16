@@ -69,57 +69,48 @@ int main(void) {
 
   char msg[30]; // serial string
   uint8_t motor_d[4]; // converted motor data
+  motor_d[0] = 0;
+  motor_d[2] = 0;
   int debug_data[5]; // debug data from "motor_data_conversion"
   uint8_t servo_d[2]; // converted servo data
+  servo_d[0] = 0;
+  servo_d[1] = 0;
 
   while (1) {
     // Check if 20ms has passed since last send
     // This limits packet rate to 50Hz (fast, but not overwhelming)
     if (milliseconds_now() - lastSend >= 20) {
       lastSend = milliseconds_now();
-      /*
+
       // Read left joystick (X = turn, Y = forward/backward)
-      left_x_val = adc_read(PIN_JOYSTICKRIGHT_X);
-      left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y); 
+      // left_x_val = adc_read(PIN_JOYSTICKRIGHT_X);
+      // left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y); 
       // left_y_val = adc_read(PIN_JOYSTICKLEFT_Y); 
  
       // sprintf(msg, "\nNEW\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
       // serial0_print_string(msg);
       
-      motor_data_conversion(left_y_val, left_x_val, motor_d, debug_data);
+      motor_data_conversion(motor_d, debug_data);
       
       // Send joystick data as a 5-byte command packet:
       serial2_write_bytes(5, JOYSTICK_MOTOR_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
-      */
+
       
       servo_read_joystick(servo_d);
       serial2_write_bytes(3, JOYSTICK_SERVO_READ, servo_d[0], servo_d[1]);
 
-
     }
-    // if (milliseconds_now() - lastSend_debug >= 200) {
-    //   lastSend_debug = milliseconds_now();
+    if (milliseconds_now() - lastSend_debug >= 200) {
+      lastSend_debug = milliseconds_now();
       
-    //   sprintf(msg, "\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
-    //   serial0_print_string(msg);
+      sprintf(msg, "\nvel: %d, dir: %d", servo_d[0], servo_d[1]);
+      serial0_print_string(msg);
     //   // debugging - print to terminal
     //   sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
     //   serial0_print_string(msg);
     //   sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
     //   serial0_print_string(msg);
-    // }
+    }
   }
   return 0;
-}
-
-void print_to_lcd(char * msg1, int16_t val1, int16_t val2)
-{
-  char LCD_msg[17] = {0};
-  lcd_clrscr();
-  lcd_goto(0);
-  snprintf(LCD_msg, sizeof(LCD_msg), "X: %d, Y: %d", val1, val2);
-  lcd_puts(LCD_msg);
-  lcd_goto(0x40);
-  snprintf(LCD_msg, sizeof(LCD_msg), "%s", msg1);
-  lcd_puts(LCD_msg);
 }

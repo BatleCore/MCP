@@ -9,6 +9,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "serial.h"
+#include "adc.h"
 
 //include provided header files
 
@@ -40,7 +41,7 @@
 #define PIN_MR PA1 // D23 → Right motor
 
 //functions
-void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug);
+void motor_data_conversion(uint8_t* results, int* bug);
 void motor_init();
 void differential_PWM_v3(uint8_t* motor_data);
 void motor_test();
