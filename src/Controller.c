@@ -25,7 +25,8 @@ Ry = A0 = PF0
 
 // Communication Codes (matches the robot)
 #define LDR_REQUEST  0xA0  // Request light sensor data from robot
-#define JOYSTICK_READ  0xA1  // Send joystick X/Y to robot for motor control
+#define JOYSTICK_MOTOR_READ  0xA1  // Send joystick X/Y to robot for motor control
+#define JOYSTICK_SERVO_READ  0xA2  // Send joystick X/Y to robot for servo control
 #define REQUEST_ERROR  0xEE  // Error / fallback code (not used here)
 
 // Convert 10-bit ADC (0–1023) to 8-bit value (0–255)
@@ -69,13 +70,14 @@ int main(void) {
   char msg[30]; // serial string
   uint8_t motor_d[4]; // converted motor data
   int debug_data[5]; // debug data from "motor_data_conversion"
+  uint8_t servo_d[2]; // converted servo data
 
   while (1) {
     // Check if 20ms has passed since last send
     // This limits packet rate to 50Hz (fast, but not overwhelming)
     if (milliseconds_now() - lastSend >= 20) {
       lastSend = milliseconds_now();
- 
+      /*
       // Read left joystick (X = turn, Y = forward/backward)
       left_x_val = adc_read(PIN_JOYSTICKRIGHT_X);
       left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y); 
@@ -87,19 +89,25 @@ int main(void) {
       motor_data_conversion(left_y_val, left_x_val, motor_d, debug_data);
       
       // Send joystick data as a 5-byte command packet:
-      serial2_write_bytes(5, JOYSTICK_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
-    }
-    if (milliseconds_now() - lastSend_debug >= 200) {
-      lastSend_debug = milliseconds_now();
+      serial2_write_bytes(5, JOYSTICK_MOTOR_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
+      */
       
-      sprintf(msg, "\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
-      serial0_print_string(msg);
-      // debugging - print to terminal
-      sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
-      serial0_print_string(msg);
-      sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
-      serial0_print_string(msg);
+      servo_read_joystick(servo_d);
+      serial2_write_bytes(3, JOYSTICK_SERVO_READ, servo_d[0], servo_d[1]);
+
+
     }
+    // if (milliseconds_now() - lastSend_debug >= 200) {
+    //   lastSend_debug = milliseconds_now();
+      
+    //   sprintf(msg, "\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
+    //   serial0_print_string(msg);
+    //   // debugging - print to terminal
+    //   sprintf(msg, "L: %d : %d\n", motor_d[1], motor_d[0]);
+    //   serial0_print_string(msg);
+    //   sprintf(msg, "R: %d : %d\n", motor_d[3], motor_d[2]);
+    //   serial0_print_string(msg);
+    // }
   }
   return 0;
 }
