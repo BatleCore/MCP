@@ -226,6 +226,7 @@ void motor_test() {
     init = 0;
   }
   uint8_t motor_data[4];
+  
   motor_data[0] = 0;
   motor_data[1] = 2;
   motor_data[2] = 0;

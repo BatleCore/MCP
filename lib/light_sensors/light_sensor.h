@@ -17,11 +17,9 @@
 
 // === Custom Libraries ===
 #include "motor_control.h"
+#include"PIN_ASSIGNMENT.h"
 
 // === Constants and Configuration ===
-#define PIN_LDR_LEFT  PA4      // ADC channel for left LDR
-#define PIN_LDR_RIGHT PA5      // ADC channel for right LDR
-
 #define SAMPLE_RATE 100         // 100 Hz sample rate
 #define SAMPLE_PERIOD 10        // ms (1000 / SAMPLE_RATE)
 #define SIGNAL_THRESHOLD 20     // Signal threshold for edge detection

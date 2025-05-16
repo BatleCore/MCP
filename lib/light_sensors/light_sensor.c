@@ -1,5 +1,19 @@
 #include "light_sensor.h"
 
+// these are imported with PIN_ASSIGNMENT.h
+// #define PIN_LDR_LEFT PA4
+// #define PIN_LDR_RIGHT PA4
+
+#define SAMPLE_RATE 100     // 100 Hz
+#define SAMPLE_PERIOD 10    // 100hz = 10 ms 
+#define SIGNAL_THRESHOLD 20 // Adjust from testing
+
+#define FREQ_TARGET 2000     // 20.00 Hz
+#define FREQ_TOL    500      // ±5 Hz tolerance
+
+#define PROXIMITY_THRESHOLD 900
+int16_t last_signal = 0;
+
 void LDR_init() {
     TCCR3A = 0;
     TCCR3B = (1<<WGM32); // CTC Mode
@@ -72,4 +86,24 @@ void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
     // Execute motor instruction
     motor_data_conversion(speed, turn, motor_data, bug);
     differential_PWM_v3(motor_data);
+}
+
+void LDR_test() {
+    serial0_init();
+    LDR_init();
+    adc_init();
+    _delay_ms(20);
+    uint16_t L_val = 0;
+    uint16_t R_val = 0;
+    char msg[20];
+
+    while (1) {
+        L_val = adc_read(PIN_LDR_LEFT);
+        R_val = adc_read(PIN_LDR_RIGHT);
+        sprintf(msg, "\n\nL: %d\nR: %d", L_val, R_val);
+        serial0_print_string(msg);
+        _delay_ms(250);
+    }
+
+
 }
