@@ -1,14 +1,18 @@
+// controller display lib
 #include "controller_display.h"
 
-typedef enum {
-    SCREEN_HOME = 0,
-    SCREEN_LIGHT,
-    SCREEN_RANGE,
-    SCREEN_COUNT
-} LCD_Screen;
 
-volatile currentScreen = SCREEN_HOME;
+void display_init() {
+    DDRD &= ~(1 << PD0);
+    PORTD |= (1 << PD0);
+    // Enable INT0 on falling edge (button press)
+    EIMSK |= (1 << INT0);             // Enable INT0
+    EICRA |= (1 << ISC01);            // ISC01=1, ISC00=0 → falling edge
+    EICRA &= ~(1 << ISC00);
 
+    // Enable global interrupts
+    sei();
+}
 void nextScreen() {
     currentScreen = (currentScreen + 1) % SCREEN_COUNT;
     lcd_clrscr();
@@ -23,7 +27,7 @@ void updateLCD( bool auto_mode, float battery, uint8_t beacon_id, float beacon_f
     lcd_goto(0x00); // line 1
     switch(currentScreen) {
         case SCREEN_HOME: 
-            packet = requestHOMEdata()
+            //packet = requestHOMEdata();
             sprintf(buffer, "%s MODE", auto_mode ? "AUT" : "MAN");
             lcd_puts(buffer);
         
@@ -37,5 +41,33 @@ void updateLCD( bool auto_mode, float battery, uint8_t beacon_id, float beacon_f
         case SCREEN_RANGE:
 
         break;
+    }
+}
+
+void test_LCD(ScreenState screen) {
+    lcd_clrscr();
+    lcd_goto(0x00);  // Start of first line
+
+    switch (screen) {
+        case SCREEN_HOME:
+            lcd_puts("Home Screen");
+            break;
+        case SCREEN_LIGHT:
+            lcd_puts("Light Sensors");
+            break;
+        case SCREEN_RANGE:
+            lcd_puts("Range Sensors");
+            break;
+        default:
+            lcd_puts("Unknown Screen");
+            break;
+    }
+}
+
+ISR(INT0_vect) {
+    static uint32_t last_press = 0;
+    if (milliseconds_now() - last_press > 250) {
+        currentScreen = (currentScreen + 1) % SCREEN_COUNT;
+        last_press = milliseconds_now();
     }
 }

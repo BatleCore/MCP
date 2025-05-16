@@ -23,10 +23,8 @@
 #define SAMPLE_RATE 100         // 100 Hz sample rate
 #define SAMPLE_PERIOD 10        // ms (1000 / SAMPLE_RATE)
 #define SIGNAL_THRESHOLD 20     // Signal threshold for edge detection
-
 #define FREQ_TARGET 2000        // 20.00 Hz (in hundredths of Hz)
 #define FREQ_TOL    500         // ±5.00 Hz tolerance (hundredths of Hz)
-
 #define PROXIMITY_THRESHOLD 900 // ADC value to trigger "close enough" detection
 
 // === Global Variables ===

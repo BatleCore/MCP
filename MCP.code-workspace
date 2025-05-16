@@ -10,7 +10,8 @@
 			"adc.h": "c",
 			"robot.h": "c",
 			"delay.h": "c",
-			"motor_control.h": "c"
+			"motor_control.h": "c",
+			"controller_display.h": "c"
 		}
 	}
 }
