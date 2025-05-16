@@ -1,3 +1,20 @@
+/* INSTRUCTIONS 4 MAT
+
+void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
+  Converts joystick-style inputs into motor PWM and direction.
+  Inputs:
+    speed:    0 (full forward) to 1023 (full reverse)
+    turning:  0 (full left) to 1023 (full right)
+  Outputs:
+    results[4] = {left_duty, left_dir, right_duty, right_dir}
+      duty:  0–250 (PWM speed)
+      dir:   0 = reverse, 1 = stop, 2 = forward
+    bug[5] (optional): debug info [slow, fast, turn_mag, speed, dir]
+
+void differential_PWM_v3(uint8_t* motor_data)
+  Applies PWM and direction to motors based on data from motor_data_conversion().
+  Expects array of 4 bytes: [L_duty, L_dir, R_duty, R_dir] */
+
 #include "motor_control.h"
 #include <stdlib.h>
 #include <stdio.h>

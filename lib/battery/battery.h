@@ -1,7 +1,7 @@
-#ifndef TEST_BATTERY_H_
-#define TEST_BATTERY_H_
+#ifndef BATTERY_H_
+#define BATTERY_H_
 
-//include standard libraries
+// === Standard AVR Includes ===
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdbool.h>
@@ -9,15 +9,31 @@
 #include <util/delay.h>
 #include <stdio.h>
 
-//include header files
-#include "serial.h" //minimal serial lib
-#include "adc.h" //minimal adc lib
-#include "milliseconds.h" //milliseconds timekeeping lib
-#include "hd44780.h" //LCD lib
+// === Unit Libraries ===
+#include "serial.h"        // Minimal serial lib
+#include "adc.h"           // ADC interface
+#include "milliseconds.h"  // Timekeeping
+#include "hd44780.h"       // LCD interface
 
+// === Custom Libraries ===
+
+// === Constants and Configuration ===
+#define PIN_BATTERY_SENSE PF0 // ADC pin
+#define PORT_BATTERY PORTA  
+#define DDR_BATTERY_LED DDRA
+#define PIN_BATTERY_LED PA4   // Indicator LED digital output
+#define BATTERY_THRESH 950    // seems to trip at 7.4v supply..?
+#define CHECK_TIME 100
+#define FLASH_TIME 25
+
+// === Global Variables ===
+volatile bat_val;             // stores battery voltage reading
+volatile uint8_t battery_check_counter;
+volatile uint8_t battery_flash_counter;
+volatile bool bat_low;
+
+// === Functions ===
 void battery_init();
-void monitorBattery();
 void testBattery();
 
-
-#endif
+#endif /* BATTERY_H_ */
