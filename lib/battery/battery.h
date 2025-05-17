@@ -16,12 +16,11 @@
 #include "hd44780.h"       // LCD interface
 
 // === Custom Libraries ===
+#include "PIN_ASSIGNMENT.h"
 
 // === Constants and Configuration ===
-#define PIN_BATTERY_SENSE PF0 // ADC pin
 #define PORT_BATTERY PORTA  
 #define DDR_BATTERY_LED DDRA
-#define PIN_BATTERY_LED PA4   // Indicator LED digital output
 #define BATTERY_THRESH 950    // seems to trip at 7.4v supply..?
 #define CHECK_TIME 100
 #define FLASH_TIME 25

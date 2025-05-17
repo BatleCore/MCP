@@ -13,8 +13,8 @@
 #define PIN_DISTANCE_CENT 4 // D58
 #define PIN_DISTANCE_RIGHT 5 // D59
 
-#define PIN_JOY_L_X PK6
-#define PIN_JOY_L_Y PK7
+#define PIN_JOY_L_X 14 // A14
+#define PIN_JOY_L_Y 15 // A15
 #define PIN_JOY_R_X PF1
 #define PIN_JOY_R_Y PF0
 
@@ -23,7 +23,8 @@
 #define PIN_ML_R PA1 // D23 → Left motor reverse
 #define PIN_MR_F PA2 // D24 → Right motor forward
 #define PIN_MR_R PA3 // D25 → Right motor reverse
-#define PINBATTERY_LED PA4 // D26
+#define PIN_BATTERY_LED PA4   // Indicator LED digital output
+
 
 // OUTPUTS - PWM
 #define PIN_PWM_ML PB5 // D11 - OC1A

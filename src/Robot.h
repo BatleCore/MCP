@@ -18,6 +18,7 @@
 #include "PIN_ASSIGNMENT.h"
 #include "communication.h"
 #include "motor_control.h"
+#include "servo_control.h"
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"

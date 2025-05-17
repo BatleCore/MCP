@@ -18,6 +18,7 @@
 // === Custom Libraries ===
 
 // === Constants and Configuration ===
+// SERIAL PACKET CODES :
 #define LDR_REQUEST  0xA0  // Request light sensor data from robot
 #define JOYSTICK_MOTOR_READ  0xA1  // Send joystick X/Y to robot for motor control
 #define JOYSTICK_SERVO_READ  0xA2  // Send joystick X/Y to robot for servo control

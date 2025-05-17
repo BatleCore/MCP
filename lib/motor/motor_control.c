@@ -22,7 +22,7 @@ void differential_PWM_v3(uint8_t* motor_data)
 
 void motor_init() {
   // set motor output pins
-  DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R); // only using 2 of these
+  DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R);
 
   // Set PWM timer for motors
   TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
@@ -38,66 +38,60 @@ void motor_init() {
   PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
   PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
 
+  // calculate values for motor functions - these remain constant
+  centre_BOT = 512 * (1 - HYST);
+  centre_TOP = 1023 - centre_BOT;
+  hyst_range = centre_TOP - centre_BOT;
+  true_range = 1023 - hyst_range;
+
 }
 
-void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
+
+void motor_data_conversion(uint8_t* results)
 {
-  static float hyst = 0.1;
-  static float turning_cap = 1;
-
-  /* Initialization */
-  // top value = 1023
-  // centre val = 512
-
-  // static int results[4]; // [left_duty, left_dir, right_duty, right_dir]
-
-  int centre_BOT = 512 * (1 - hyst);
-  int centre_TOP = 1023 - centre_BOT;
-  int hyst_range = centre_TOP - centre_BOT;
-  int true_range = 1023 - hyst_range;
-
-  printf("centre TOP: %d\n", centre_TOP);
-  printf("centre BOT: %d\n", centre_BOT);
-  printf("true range: %d\n", true_range);
-  printf("hyst range: %d\n", hyst_range);
-  /* define variables */
+  // INITIALIZING VARIABLES WITH DEFAULT STATES
   float turn_magnitude = 0; // [ 0 -> 1 ]
-  int turn_direction = 0;   // [ 0, 1 ] - 0 for left?
+  int turn_direction = 0;   // [ 0, 1 ] - 0 for left
+  int travel_direction = 0; // overall forward or reverse, reverse default
 
-  // int fast_dir = 1; // default forward
-  // int slow_dir = 1; // default forward
-  // fast_duty - defined later / no default
-  // slow_duty - defined later / no default
+  /* READING ADC VALUES FOR CONTROL INSTRUCTIONS
+    SPEED:
+      0 IS FORWARD
+      1023 IS REVERSE
+    TURNING:
+      0 IS LEFT
+      1023 IS RIGHT
+  */
+  uint16_t speed = adc_read(PIN_JOY_L_Y);
+  uint16_t turning = adc_read(PIN_JOY_L_X);
 
-  // quick nasty fix
-  // speed 0 = forward
-  // speed 1023 = backward
+  speed = 1023 - speed; // dirty fix - joy dirtection invert
 
-  speed = 1023 - speed;
-
-  /* trim speed value */
+  /* TRIMMING FOR STICK-DRIFT */
   if (speed > centre_TOP)
-  {
+  { // forward
     speed = speed - hyst_range;
+    travel_direction = 1;
   }
   else if (speed > centre_BOT)
   {
     speed = centre_BOT;
+    // travel_direction = 0 by default
   }
-  printf("trimmed speed value: %d\n", speed);
 
-  /* trim turning value */
   if (turning > centre_TOP)
-  {
-    turn_magnitude = (turning - centre_TOP) * turning_cap / centre_BOT;
+  { // RIGHT
+    turn_magnitude = (turning - centre_TOP) * TURNING_CAP / centre_BOT;
     turn_direction = 1;
   }
   else if (turning < centre_BOT)
-  {
-    turn_magnitude = (centre_BOT - turning) * turning_cap / centre_BOT;
+  { // LEFT
+    turn_magnitude = (centre_BOT - turning) * TURNING_CAP / centre_BOT;
+    // turn_direction = 0 by default
   }
 
-  /* split left and right */
+  // skew for two motors
+  // lower is faster forward
   float fast_side = speed + turn_magnitude * centre_BOT;
   float slow_side = speed - turn_magnitude * centre_BOT;
 
@@ -114,13 +108,6 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
     fast_side = 2 * turn_magnitude * centre_BOT;
   }
 
-  // int fast_duty = abs((fast_side - centre_BOT) * 254 / centre_BOT);
-  // int fast_dir = (fast_side>centre_BOT);
-
-  // int slow_duty = abs((slow_side - centre_BOT) * 254 / centre_BOT);
-  // int slow_dir = (slow_side>centre_BOT);
-
-
   // RESULTS MAY NEED TO BE RETURNED AS uint8_t
   // as unsigned ints, -1 is useless, therefore:
   // forward = 2
@@ -131,32 +118,40 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
   // turn direction:
   //    0: turn left
   //    1: turn right
-  if (turn_direction == 0) // toggle [0, 1] to correct direction
+
+  int slow_side_speed_p = ((slow_side - centre_BOT)/ centre_BOT);
+  int slow_side_turn = ((int)slow_side > centre_BOT) ? 1 : ((int)slow_side < centre_BOT) ? 0 : 2;
+  int fast_side_speed_p = ((fast_side - centre_BOT) / centre_BOT);
+  int fast_side_turn = ((int)fast_side > centre_BOT) ? 1 : ((int)fast_side < centre_BOT) ? 0 : 2;
+
+  /* THIS IS AN XOR GATE
+  __________________
+  | D | T || L | R |
+  |---|---||---|---|
+  | 0 | 0 || S | F | FORWARDS AND LEFT
+  | 0 | 1 || F | S | FORWARDS AND RIGHT
+  | 1 | 0 || F | S | REVERSE AND LEFT
+  | 1 | 1 || S | F | REVERSE AND RIGHT
+  
+  */
+  if (turn_direction == travel_direction)
   {
     // Left side slower
-    results[0] = abs((slow_side - centre_BOT) * 250 / centre_BOT);
-    results[1] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
+    results[0] = slow_side_speed_p * slow_side_speed_p * 250;
+    results[1] = slow_side_turn;
     // right side faster
-    results[2] = abs((fast_side - centre_BOT) * 250 / centre_BOT);
-    results[3] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
+    results[2] = fast_side_speed_p * fast_side_speed_p * 250;
+    results[3] = fast_side_turn;
   }
   else
   {
-    // left side faster
-    results[2] = abs((slow_side - centre_BOT) * 250 / centre_BOT);
+    // right side faster
+    results[2] = ((slow_side - centre_BOT)/ centre_BOT) * ((slow_side - centre_BOT)/ centre_BOT) * 250;
     results[3] = ((int)slow_side > centre_BOT) ? 2 : ((int)slow_side < centre_BOT) ? 0 : 1;
-    // right side slower
-    results[0] = abs((fast_side - centre_BOT) * 250 / centre_BOT);
+    // Left side slower
+    results[0] = ((fast_side - centre_BOT) / centre_BOT) * ((fast_side - centre_BOT) / centre_BOT) * 250;
     results[1] = ((int)fast_side > centre_BOT) ? 2 : ((int)fast_side < centre_BOT) ? 0 : 1;
   }
-  bug[0] = slow_side;
-  bug[1] = fast_side;
-  bug[2] = (int)(turn_magnitude*1000);
-  bug[3] = speed;
-  bug[4] = turn_direction;
-  // output = results;
-  // return pointer to first arrary location
-  // return *results[0];
 }
 
 void differential_PWM_v3(uint8_t* motor_data){
@@ -269,17 +264,3 @@ void timerPWM_init() {
   DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
 }
 
-void differential_PWM_init(){
-  TCCR1A = (1<<COM1A1)|(1<<COM1B1);   // Non-inverting PWM on OC1A and OC1B
-  TCCR1B = (1 << WGM13) | (1 << CS11);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
-  ICR1 = 2000;              // Set TOP for 500Hz
-  OCR1A = 0;
-  OCR1B = 0;
-  DDR_PWM |= (1 << PIN_PWM_ML) | (1 << PIN_PWM_MR); // Set PWM pins as output
-  
-  // lock motors to off state
-  OCR1A = 0;
-  PORT_CONTROL &= ~(1 << PIN_ML); // LOW
-  OCR1B = 0;
-  PORT_CONTROL &= ~(1 << PIN_MR); // LOW
-}

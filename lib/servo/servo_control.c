@@ -13,7 +13,7 @@ void servo_init() {
   TCCR3A = (1<<COM3A1)|(1<<COM3B1);   // Non-inverting PWM on OC1A and OC1B
   TCCR3B = (1 << WGM33) | (1 << CS31);  // Mode 8: PWM Phase & Freq Correct, Prescaler = 8
   ICR3 = 20000;              // Set TOP for 50Hz
-  TIMSK3 |= (1<<TOIE3); // Bit 0 – TOIEn: Timer/Countern, Overflow Interrupt Enable
+  // TIMSK3 |= (1<<TOIE3); // Bit 0 – TOIEn: Timer/Countern, Overflow Interrupt Enable
   OCR3A = SERVO_PULSE_OPEN;
   DDR_SERVO|= (1 << PIN_SERVO); // Set PWM pins as output
   gripper_toggle(); // initializes gripper to open state ( try using static file-scope variable? )
@@ -71,8 +71,11 @@ void gripper_toggle() {
 }
 
 void servo_set_velocity(uint8_t* servo_data) {
-  velocity = servo_data[0];
-  velocity = servo_data[1];
+  if (servo_data[1] == 2) {
+    servo_set_pos(SERVO_PULSE_CLOSE);
+  } else if (servo_data[1] == 0) {
+    servo_set_pos(SERVO_PULSE_OPEN);
+  }
 }
 
 void servo_read_joystick(uint8_t* servo_data) {
@@ -80,7 +83,6 @@ void servo_read_joystick(uint8_t* servo_data) {
   // servo_data[1]: direction
 
   uint16_t speed;
-  uint16_t direction;
   speed = adc_read(PIN_JOY_R_Y);
 
   int centre_BOT = 512 * 0.95;
@@ -91,23 +93,23 @@ void servo_read_joystick(uint8_t* servo_data) {
   /* trim speed value */
   if (speed > centre_TOP)
   {
-    servo_data[0] = (speed - centre_TOP) * (15/centre_BOT) + 1;
-    servo_data[1] = 2;
+    servo_data[0] = (speed - centre_TOP) * (15.0/centre_BOT) + 1;
+    servo_data[1] = 0;
   }
   else if (speed > centre_BOT)
   {
     servo_data[0] = 0;
-    servo_data[1] = 2;
+    servo_data[1] = 1;
   } else {
-    servo_data[0] = centre_BOT - speed * (15/centre_BOT) + 1;
-    servo_data[1] = 0;
+    servo_data[0] = (centre_BOT - speed) * (15.0/centre_BOT) + 1;
+    servo_data[1] = 2;
   }
 
 }
 
 
 // TIMSK1 |= (1<<TOIE1); // Bit 0 – TOIEn: Timer/Countern, Overflow Interrupt Enable
-ISR(TIMER1_OVF_vect) {
-  uint16_t new_val = SERVO_POS + velocity * direction;
-  servo_set_pos(new_val);
-}
+// ISR(TIMER1_OVF_vect) {
+//   // uint16_t new_val = SERVO_POS + velocity * (direction -1);
+//   // servo_set_pos(new_val);
+// }
