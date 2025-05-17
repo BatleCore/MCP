@@ -13,28 +13,28 @@ int main(void) {
 
 
   while (1) {
-    if (new_LDR_readings) {
-      new_LDR_readings = false;
 
-      signalLeft = getSignal(leftLDR, 0);
-      signalRight = getSignal(rightLDR, 1);
-
-      freqLeft = getFrequency(signalLeft, 0);
-      freqRight = getFrequency(signalRight, 1);
+    if ((freqLeft >= 1900 && freqLeft <= 2100) ||
+      (freqRight >= 1900 && freqRight <= 2100)) {
+      seekBeacon(leftLDR, rightLDR);
+    } else {
+      speed = 512;
+      turn = 512;
+    }
 
       if (isr_counter >= 50) {
         isr_counter = 0;
-        sprintf(msg, "\n\nLval: %d\nRval: %d", leftLDR, rightLDR);
+        sprintf(msg, "\nLfreq: %d   Lval: %d", freqLeft, leftLDR);
+        serial0_print_string(msg);
+        sprintf(msg, "\nRfreq: %d   Rval: %d", freqRight, rightLDR);
         serial0_print_string(msg);
 
-        sprintf(msg, "\n\nLsignal: %d\nRsignal: %d", signalLeft, signalRight);
+        sprintf(msg, "\nBeacon Turn: %u  Speed: %u\n", turn, speed);
         serial0_print_string(msg);
 
-        sprintf(msg, "\n\nLfreq: %d\nRfreq: %d", freqLeft, freqRight);
-        serial0_print_string(msg);
         _delay_ms(250);
       }
-    }
+
     
 
     
