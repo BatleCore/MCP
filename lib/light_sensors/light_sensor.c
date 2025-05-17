@@ -1,9 +1,5 @@
 #include "light_sensor.h"
 
-// these are imported with PIN_ASSIGNMENT.h
-// #define PIN_LDR_LEFT PA4
-// #define PIN_LDR_RIGHT PA4
-
 #define SAMPLE_RATE 100     // 100 Hz
 #define SAMPLE_PERIOD 10    // 100hz = 10 ms 
 #define SIGNAL_THRESHOLD 20 // Adjust from testing
@@ -65,7 +61,6 @@ ISR(TIMER3_COMPB_vect) {
 void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
     
     uint8_t motor_data[4];
-    int bug[5];
 
     // Calculate turn direction
     uint16_t total_magnitude = leftLDR + rightLDR;
@@ -84,7 +79,7 @@ void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
         speed = 1023 - avg_magnitude;
     }
     // Execute motor instruction
-    motor_data_conversion(speed, turn, motor_data, bug);
+    motor_data_conversion(motor_data);
     differential_PWM_v3(motor_data);
 }
 

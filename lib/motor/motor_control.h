@@ -17,12 +17,8 @@
 #include "PIN_ASSIGNMENT.h"
 
 //constants
-
-// MOTOR PINS
-#define PIN_ML_F PA0 // D22 → Left motor forward
-#define PIN_ML_R PA1 // D23 → Left motor reverse
-#define PIN_MR_F PA2 // D24 → Right motor forward
-#define PIN_MR_R PA3 // D25 → Right motor reverse
+#define HYST 0.1
+#define TURNING_CAP 0.5
 
 // CLOCK COMPLARE FOR PWMs
 #define DUTY_LEFT OCR1A
@@ -30,22 +26,21 @@
 
 #define PORT_PWM PORTB
 #define DDR_PWM DDRB
-#define PIN_PWM_ML PB5 // D11 → OC1A (PWM output for left motor)
-#define PIN_PWM_MR PB6 // D12 → OC1B (PWM output for right motor)
 
 #define PORT_CONTROL PORTA
 #define DDR_CONTROL DDRA
 
-// NEW MOTOR PINS
-#define PIN_ML PA0 // D22 → Left motor
-#define PIN_MR PA1 // D23 → Right motor
-
 //functions
-void motor_data_conversion(uint8_t* results, int* bug);
+void motor_data_conversion(uint8_t* results);
 void motor_init();
 void differential_PWM_v3(uint8_t* motor_data);
 void motor_test();
 void timerPWM_init();
-void differential_PWM_init();
+
+//scope-global variables
+int centre_BOT;
+int centre_TOP;
+int hyst_range;
+int true_range;
 
 #endif

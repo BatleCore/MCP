@@ -71,7 +71,6 @@ int main(void) {
   uint8_t motor_d[4]; // converted motor data
   motor_d[0] = 0;
   motor_d[2] = 0;
-  int debug_data[5]; // debug data from "motor_data_conversion"
   uint8_t servo_d[2]; // converted servo data
   servo_d[0] = 0;
   servo_d[1] = 0;
@@ -90,7 +89,7 @@ int main(void) {
       // sprintf(msg, "\nNEW\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
       // serial0_print_string(msg);
       
-      motor_data_conversion(motor_d, debug_data);
+      motor_data_conversion(motor_d);
       
       // Send joystick data as a 5-byte command packet:
       serial2_write_bytes(5, JOYSTICK_MOTOR_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);

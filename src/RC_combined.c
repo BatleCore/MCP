@@ -200,7 +200,7 @@ int main(void) {
 
       joy_L = adc_read(LEFT_POT_PIN);
       joy_R = adc_read(RIGHT_POT_PIN);
-      motor_data_conversion(joy_L, joy_R, motor_data, debug_data);
+      motor_data_conversion(motor_data);
       differential_PWM_v3(motor_data);
       sprintf(msg, "\nL: %d : %d\n", motor_data[1], motor_data[0]);
       serial0_print_string(msg);
