@@ -76,8 +76,8 @@ ISR(TIMER4_COMPA_vect) {
 }
 
 void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
-    uint8_t motor_data[4];
-    int bug[5];
+    //uint8_t motor_data[4];
+    //int bug[5];
 
     // Calculate turn direction
     uint16_t total_magnitude = leftLDR + rightLDR;
@@ -96,8 +96,8 @@ void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
     }
 
     // Execute motor instruction
-    motor_data_conversion(speed, turn, motor_data, bug);
-    differential_PWM_v3(motor_data);
+    //motor_data_conversion(speed, turn, motor_data, bug);
+    //differential_PWM_v3(motor_data);
 }
 
 void LDR_test() {
