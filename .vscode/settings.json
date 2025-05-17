@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "serial.h": "c",
+        "milliseconds.h": "c"
+    }
+}

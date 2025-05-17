@@ -18,6 +18,8 @@
 
 //include custom header files
 #include "PIN_ASSIGNMENT.h"
+#include "communication.h"
+#include "servo_control.h"
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"

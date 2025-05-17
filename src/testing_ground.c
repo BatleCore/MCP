@@ -1,21 +1,6 @@
 //main
 #include "light_sensor.h"
 
-
-int main(void) {
-    serial0_init();
-    lcd_init();
-    adc_init();
-    _delay_ms(20);
-
-    while (1) {
-      LDR_test2();
-      _delay_ms(250);
-    }
-    return 0;
-}
-
-/*
 int main(void) {
   cli();
   motor_init();
@@ -24,20 +9,36 @@ int main(void) {
   LDR_init();
   adc_init();
   _delay_ms(20);
+  char msg[32];
+
 
   while (1) {
-    if (new_sample_ready) {
-      new_sample_ready = false;
+    if (new_LDR_readings) {
+      new_LDR_readings = false;
 
-      uint16_t freqLeft = getFrequency(leftLDR, 0);
-      uint16_t freqRight = getFrequency(rightLDR, 1);
+      signalLeft = getSignal(leftLDR, 0);
+      signalRight = getSignal(rightLDR, 1);
 
-      if (abs(freqLeft - FREQ_TARGET) < FREQ_TOL &&
-          abs(freqRight - FREQ_TARGET) < FREQ_TOL) {
-          seekBeacon(leftLDR, rightLDR);
+      freqLeft = getFrequency(signalLeft, 0);
+      freqRight = getFrequency(signalRight, 1);
+
+      if (isr_counter >= 50) {
+        isr_counter = 0;
+        sprintf(msg, "\n\nLval: %d\nRval: %d", leftLDR, rightLDR);
+        serial0_print_string(msg);
+
+        sprintf(msg, "\n\nLsignal: %d\nRsignal: %d", signalLeft, signalRight);
+        serial0_print_string(msg);
+
+        sprintf(msg, "\n\nLfreq: %d\nRfreq: %d", freqLeft, freqRight);
+        serial0_print_string(msg);
+        _delay_ms(250);
       }
     }
+    
+
+    
   }
 
-    return 0;
-} */
+  return 0;
+}

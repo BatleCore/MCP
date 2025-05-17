@@ -1,6 +1,5 @@
 // Lab 8 Robot Micro
 #include "Robot.h"
-#include "motor_control.h"
  
 // Constants
 #define PACKETSIZE 6  // Max serial packet size we expect
@@ -21,95 +20,7 @@
 #define PORT_ADC PORTF
 #define DDR_ADC DDRF
 #define BATTERY_THRESH 300
-
-// MOTOR PINS
-#define PIN_ML_F PA0 // D22 → Left motor forward
-#define PIN_ML_R PA1 // D23 → Left motor reverse
-#define PIN_MR_F PA2 // D24 → Right motor forward
-#define PIN_MR_R PA3 // D25 → Right motor reverse
-
-// NEW MOTOR PINS
-#define PIN_ML PA0 // D22 → Left motor
-#define PIN_MR PA1 // D23 → Right motor
-
-// CLOCK COMPLARE FOR PWMs
-#define DUTY_LEFT OCR1A
-#define DUTY_RIGHT OCR1B
  
-// Communication Command Codes
-#define LDR_REQUEST 0xA0   // Controller is asking for light sensor data
-#define JOYSTICK_READ 0xA1   // Controller is sending joystick values
-#define REQUEST_ERROR 0xEE   // For handling invalid codes
- 
-// Light Sensor ADC Channels
-#define LEFT_LDR_PIN 0
-#define RIGHT_LDR_PIN 1
- 
-
- 
-// Scale raw LDR reading (0–1023) to 0–255
-uint8_t LDRmap(int reading) {
-  return reading >> 2;
-}
- 
-/********************
-Joystick → Motor Mapping
-- Converts joystick (X/Y) into motor PWM duty cycle and direction
-- Handles turning and direction flipping logic
-********************/
-void differential_PWM(uint8_t x, uint8_t y) {
-  /*
-  this will be rebuilt to use motor control data:
-    - left_duty [0 -> 255]
-    - left_dir  [0, 1]
-    - right_duty [0 -> 255]
-    - right_dir  [0, 1]
-  */
-  uint8_t leftRatio = 100;
-  uint8_t rightRatio = 100;
-  uint8_t speedRatio = 0;
-  uint16_t leftPWM = 0;
-  uint16_t rightPWM = 0;
- 
-  // Determine left/right scaling based on X-axis
-  if (x < 127) { // Joystick pushed left
-    leftRatio = 100 * x / 127;
-    rightRatio = 100;
-  }
-  else if (x > 128) { // Joystick pushed right
-    leftRatio = 100;
-    rightRatio = 100 * (255 - x) / 127;
-  }
- 
-  // Calculate motor speeds based on Y-axis
-  if (y > 128) { // Forward
-    speedRatio = 100 * (y - 128) / 127;
-    leftPWM = 2 * speedRatio * leftRatio;
-    rightPWM = 2 * speedRatio * rightRatio;
- 
-    // Set direction: forward
-    PORT_CONTROL |= (1 << PIN_ML_F);
-    PORT_CONTROL &= ~(1 << PIN_ML_R);
-    PORT_CONTROL |= (1 << PIN_MR_F);
-    PORT_CONTROL &= ~(1 << PIN_MR_R);
-  }
-  else if (y < 127) { // Backward
-    speedRatio = 100 * y / 127;
-    leftPWM = 2 * speedRatio * rightRatio;
-    rightPWM = 2 * speedRatio * leftRatio;
- 
-    // Set direction: reverse
-    PORT_CONTROL |= (1 << PIN_ML_R);
-    PORT_CONTROL &= ~(1 << PIN_ML_F);
-    PORT_CONTROL |= (1 << PIN_MR_R);
-    PORT_CONTROL &= ~(1 << PIN_MR_F);
-  }
- 
-  // Write final PWM duty cycles to Timer1
-  OCR1A = leftPWM;
-  OCR1B = rightPWM;
-}
-
 
 /********************
 Robot Initialization
@@ -158,18 +69,12 @@ int main(void) {
   motor_d[2] = 0;
   motor_d[3] = 0;
   int adc_bat_val = 0;
+  uint8_t servo_d[2];
 
   char msg[30];
   uint32_t lastSend = 0;   // Last time a packet was sent
  
   while (1) {
-    // Battery Reading
-    adc_bat_val = adc_read(PIN_BATTERY_SENSE);
-    if (adc_bat_val < BATTERY_THRESH) {
-      PORT_BATTERY |= (1<<PIN_BATTERY_LED);
-    } else {
-      PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);
-    }
 
     // Receive Serial Coms
     if (serial2_available()) { // used when controlling via serial
@@ -180,15 +85,15 @@ int main(void) {
           // Read and respond with LDR values
           // not currently used
           // not currently initialized
-          int left_LDR_read = adc_read(LEFT_LDR_PIN);
-          int right_LDR_read = adc_read(RIGHT_LDR_PIN);
+          int left_LDR_read = adc_read(PIN_LDR_LEFT);
+          int right_LDR_read = adc_read(PIN_LDR_RIGHT);
           uint8_t left_light = LDRmap(left_LDR_read);
           uint8_t right_light = LDRmap(right_LDR_read);
           serial2_write_bytes(2, left_light, right_light);
           break;
         }
  
-        case JOYSTICK_READ: {
+        case JOYSTICK_MOTOR_READ: {
           // Use joystick X/Y to update motor control
           motor_d[0] = dataRX[1];
           motor_d[1] = dataRX[2];
@@ -197,7 +102,13 @@ int main(void) {
           differential_PWM_v3(motor_d);
           break;
         }
- 
+
+        case JOYSTICK_SERVO_READ: {
+          servo_d[0] = dataRX[0];
+          servo_d[1] = dataRX[1];
+          servo_set_velocity(servo_d);
+        }
+
         default: {
           // Unrecognized command
           serial2_write_bytes(1, REQUEST_ERROR);
