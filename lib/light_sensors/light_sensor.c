@@ -12,6 +12,9 @@ volatile int16_t signalRight = 0;
 volatile uint16_t freqLeft = 0;
 volatile uint16_t freqRight = 0;
 
+uint16_t turn = 512;
+uint16_t speed = 512;
+
 char debug_msg[40];
 
 void LDR_init() {
@@ -23,55 +26,53 @@ void LDR_init() {
     sei(); // enable global ISRs
 }
 
-uint16_t getLDRval(int pin) {
-    return adc_read(pin);
-}
-
 int16_t getSignal(uint16_t LDRval, uint8_t channel) {
-    static uint16_t baseline_left = 0;
-    static uint16_t baseline_right = 0;
 
-    uint16_t* baseline = (channel == 0) ? &baseline_left : &baseline_right;
-
-    // Update baseline using exponential moving average
-    *baseline = (*baseline * 4 + LDRval) / 5;
-
-    // Return signed deviation from baseline
-    return (int16_t)LDRval - (int16_t)(*baseline);
+    static uint16_t baseline[2] = {0};
+    baseline[channel] = (baseline[channel] * 9 + LDRval) / 10; // Update baseline using exponential moving average
+    return (int16_t)LDRval - (int16_t)baseline[channel]; // Return signed deviation from baseline
 }
 
 uint16_t getFrequency(int16_t signal, uint8_t channel) {
-    static int16_t last_signal_left = 0;
-    static int16_t last_signal_right = 0;
-    static uint32_t last_time_left = 0;
-    static uint32_t last_time_right = 0;
-    static uint16_t last_freq_left = 0;
-    static uint16_t last_freq_right = 0;
 
-    int16_t* last_signal = (channel == 0) ? &last_signal_left : &last_signal_right;
-    uint32_t* last_time = (channel == 0) ? &last_time_left : &last_time_right;
-    uint16_t* freq = (channel == 0) ? &last_freq_left : &last_freq_right;
+    static int16_t  last_signal[2]    = {0};
+    static uint32_t last_time[2]      = {0};
+    static uint16_t last_freq[2]      = {0};
+    static bool     new_edge[2]       = {0};
+    static uint16_t edge_counter[2]   = {0};
 
     uint32_t now = milliseconds_now();
-
-    if (*last_signal < 0 && signal >= 0) {
-        uint32_t dt = now - *last_time;
-        *last_time = now;
-        if (dt > 0) {
-            *freq = (200000UL) / dt; // frequency in hundredths of Hz
+    if (last_signal[channel] < 0 && signal >= 0 && signal < SIGNAL_THRESHOLD) {
+        uint32_t dt = now - last_time[channel];
+        last_time[channel] = now;
+        if (dt > 47) {
+            new_edge[channel] = true;
+            edge_counter[channel] = 0;
+            last_freq[channel] = (200000UL) / dt;
         }
     }
+    edge_counter[channel]++;
+    if (edge_counter[channel] > 400 && !new_edge[channel]) {
+        last_freq[channel] = 0;
+    }
+    new_edge[channel] = false;
+    last_signal[channel] = signal;
 
-    *last_signal = signal;
-
-    return *freq;
+    return last_freq[channel];
 }
 
 ISR(TIMER4_COMPA_vect) {
+
     isr_counter++;
+
     leftLDR = adc_read(PIN_LDR_LEFT);
     rightLDR = adc_read(PIN_LDR_RIGHT);
-    new_LDR_readings = true;
+
+    signalLeft = getSignal(leftLDR, 0);
+    signalRight = getSignal(rightLDR, 1);
+
+    freqLeft = getFrequency(signalLeft, 0);
+    freqRight = getFrequency(signalRight, 1);
 }
 
 void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
@@ -80,22 +81,19 @@ void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
 
     // Calculate turn direction
     uint16_t total_magnitude = leftLDR + rightLDR;
-    uint16_t turn = (total_magnitude == 0) ? 512 : 1024 - (1024 * leftLDR / total_magnitude);
+    turn = (total_magnitude == 0) ? 512 : (1024 * leftLDR) / (total_magnitude);
     
     // calculate speed
-    uint16_t speed;
-    uint16_t avg_magnitude = total_magnitude / 2;
-
-    if (avg_magnitude >= PROXIMITY_THRESHOLD) {
-        speed = 512;  // Stop or idle speed
-        // Display "found" on LCD
+    
+    if (total_magnitude == 0) { // Prevent divide-by-zero just in case
+        turn = 512;
+    } else if (leftLDR > rightLDR) {
+        // More light on the LEFT → turn RIGHT → turn > 512
+        turn = 512 + (512UL * (leftLDR - rightLDR)) / total_magnitude;
     } else {
-        // Scale speed linearly with distance
-        speed = 1023 - avg_magnitude;
+        // More light on the RIGHT → turn LEFT → turn < 512
+        turn = 512 - (512UL * (rightLDR - leftLDR)) / total_magnitude;
     }
-
-    sprintf(debug_msg, "[seekBeacon] Turn: %u  Speed: %u\n", turn, speed);
-    serial0_print_string(debug_msg);
 
     // Execute motor instruction
     //motor_data_conversion(speed, turn, motor_data, bug);
