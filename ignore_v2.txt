@@ -1,1 +1,2 @@
 should be committed
+but this line should NOT be
