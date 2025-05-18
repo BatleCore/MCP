@@ -6,3 +6,4 @@
 platformio.ini
 src/testing_ground.c
 ignore.txt
+ignore_v2.txt
