@@ -5,29 +5,27 @@
 void battery_init() {
   DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED);  // Configure digital output for LED control
   PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);    // Initalise as off
-  OCR3A = 2499; // 100hz ISR
-  TIMSK3 |= (1<< OCIE3A); //enable the ISR
-  sei(); // enable global ISRs
 }
 
-uint8_t mapBatVoltage(uint16_t adc_value) {
-    return (adc_value * 84) / 1023;
-}
+void monitorBattery() {
 
-ISR(TIMER3_COMPA_vect) {
-  battery_check_counter ++; // counter to check battery once per second
-  battery_flash_counter++;
+  static uint32_t lastTime[2];
+  uint32_t currTime = milliseconds_now();
 
-  if (battery_check_counter >= CHECK_TIME) {
-    battery_check_counter = 0;
+    if (currTime - lastTime[0] >= CHECK_TIME) {
     bat_val = adc_read(PIN_BATTERY_SENSE);
     bat_low = (bat_val <= BATTERY_THRESH);
+    lastTime[0] = currTime;
   }
 
-  if (bat_low && battery_flash_counter >= FLASH_TIME) {
-    battery_flash_counter = 0;
+  if (bat_low && currTime - lastTime[1] >= FLASH_TIME) {
     PORT_BATTERY ^= (1<<PIN_BATTERY_LED); // switch on/off
+    lastTime[1] = currTime;
   }
+}
+
+uint8_t getVoltage(batteryADC) {
+  return (batteryADC * 84) / 1023;
 }
 
 void testBattery() {

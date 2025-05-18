@@ -20,29 +20,83 @@ void nextScreen() {
     lcd_clrscr();
 }
 
-void updateLCD( bool auto_mode, float battery, uint8_t beacon_id, float beacon_freq,
-                uint16_t ldr_left, float freq_left,
-                uint16_t ldr_right, float freq_right,
-                uint16_t dist_left, uint16_t dist_front, uint16_t dist_right) {
+void updateLCD() {
+
+    uint8_t dataRX[6];
     char buffer[20];
+    uint8_t bat_percentage = 0;
 
     lcd_goto(0x00); // line 1
+
     switch(currentScreen) {
-        case SCREEN_HOME: 
+        case SCREEN_HOME: {
+
+            serial2_write_bytes(1, BATTERY_REQUEST);
             //packet = requestHOMEdata();
-            sprintf(buffer, "%s MODE", auto_mode ? "AUT" : "MAN");
-            lcd_puts(buffer);
-        
-        break;
-        case SCREEN_LIGHT:
+            if (serial2_available()) {
+                serial2_get_data(dataRX, 2);
+
+                if (dataRX[0] == BATTERY_REQUEST) {
+                    bat_percentage = 100 * dataRX[1] / 84;
+
+                    sprintf(buffer, "%s MODE: ", auto_mode ? "AUT" : "MAN");
+                    lcd_puts(buffer);
+
+                    lcd_goto(0x40);
+                    sprintf(buffer, "BAT: %d.%dV %3d%% ", dataRX[1] / 10, dataRX[1] % 10, bat_percentage);
+                    lcd_puts(buffer);
+                }
+            }
+        break; }
+
+        case SCREEN_LIGHT: {
         // packet = requestLDRdata()
         // parse packet and assemble with sprintf
         // lcd_puts
+            serial2_write_bytes(1, LDR_REQUEST);
+            //packet = requestHOMEdata();
+            if (serial2_available()) {
+                serial2_get_data(dataRX, 5);
 
-        break;
-        case SCREEN_RANGE:
+                if (dataRX[0] == LDR_REQUEST) {
+                    // LEFT:  0000 00hz
+                    sprintf(/*above*/);
+                    lcd_puts(buffer);
 
-        break;
+                    lcd_goto(0x40);
+                    // RIGHT: 0000 00hz
+                    sprintf(/*above*/);
+                    lcd_puts(buffer);
+                }
+            }
+        break; }
+
+        case SCREEN_RANGE: {
+            serial2_write_bytes(1, RANGE_REQUEST);
+            //packet = requestHOMEdata();
+            if (serial2_available()) {
+                serial2_get_data(dataRX, 2);
+
+                if (dataRX[0] == RANGE_REQUEST) {
+                    bat_percentage = 100 * dataRX[1] / 84;
+
+                    sprintf(buffer, "%s MODE: ", auto_mode ? "AUT" : "MAN");
+                    lcd_puts(buffer);
+
+                    lcd_goto(0x40);
+                    sprintf(buffer, "BAT: %d.%dV %3d%% ", dataRX[1] / 10, dataRX[1] % 10, bat_percentage);
+                    lcd_puts(buffer);
+                }
+            }
+        break; }
+    }
+}
+
+ISR(INT0_vect) {
+    static uint32_t last_press = 0;
+    if (milliseconds_now() - last_press > 250) {
+        currentScreen = (currentScreen + 1) % SCREEN_COUNT;
+        last_press = milliseconds_now();
     }
 }
 
@@ -66,15 +120,5 @@ void test_LCD(ScreenState screen) {
         default:
             lcd_puts("Unknown Screen");
             break;
-    }
-}
-
-ISR(INT0_vect) {
-    serial0_print_string("bounce press\n");
-    static uint32_t last_press = 0;
-    if (milliseconds_now() - last_press > 250) {
-        serial0_print_string("valid press\n");
-        currentScreen = (currentScreen + 1) % SCREEN_COUNT;
-        last_press = milliseconds_now();
     }
 }
