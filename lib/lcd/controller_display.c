@@ -30,20 +30,37 @@ void updateLCD() {
 
     switch(currentScreen) {
         case SCREEN_HOME: {
-
+            // Ask robot for battery voltage
             serial2_write_bytes(1, BATTERY_REQUEST);
-            //packet = requestHOMEdata();
-            if (serial2_available()) {
-                serial2_get_data(dataRX, 2);
 
-                if (dataRX[0] == BATTERY_REQUEST) {
-                    bat_percentage = 100 * dataRX[1] / 84;
-
+                // Wait for robot response
+                uint32_t start_wait = milliseconds_now();
+                while (!serial2_available()) {/*wait with 200ms timeout*/
+                if (milliseconds_now() - start_wait >= 200) {
+                    // Print first line - Operation Mode
                     sprintf(buffer, "%s MODE: ", auto_mode ? "AUT" : "MAN");
                     lcd_puts(buffer);
-
+                    // Print second line - Battery Request Timeout
                     lcd_goto(0x40);
+                    lcd_puts("BAT: TIMEOUT");
+                    return;
+                }
+            }
+
+                // Message receieved do logic
+                // Get the 2-byte packet (1 instruction bit, 1 data bit)
+                serial2_get_data(dataRX, 2);
+                // Check its the corresponding instruction bit
+                if (dataRX[0] == BATTERY_REQUEST) {
+                    // calculate battery percentage
+                    bat_percentage = (dataRX[1] > 70) ? (100 * (dataRX[1] - 70) / 14) : 0;
+                    // Print first line - Operation Mode
+                    sprintf(buffer, "%s MODE: ", auto_mode ? "AUT" : "MAN");
+                    lcd_goto(0x00);
+                    lcd_puts(buffer);
+                    // Print second line - Battery voltage & percentage
                     sprintf(buffer, "BAT: %d.%dV %3d%% ", dataRX[1] / 10, dataRX[1] % 10, bat_percentage);
+                    lcd_goto(0x40);
                     lcd_puts(buffer);
                 }
             }
