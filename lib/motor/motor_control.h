@@ -19,6 +19,8 @@
 //constants
 #define HYST 0.1
 #define TURNING_CAP 0.5
+#define SPEED_INVERT 1
+#define TURN_INVERT 1
 
 // CLOCK COMPLARE FOR PWMs
 #define DUTY_LEFT OCR1A
@@ -36,6 +38,8 @@ void motor_init();
 void differential_PWM_v3(uint8_t* motor_data);
 void motor_test();
 void timerPWM_init();
+void rs_motor_conversion(uint8_t* input_data);
+void cs_motor_conversion(uint8_t* results);
 
 //scope-global variables
 int centre_BOT;

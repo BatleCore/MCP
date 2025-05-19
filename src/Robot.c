@@ -47,7 +47,6 @@ void setup() {
   _delay_ms(20);
   adc_init();        // Analog input (joystick + sensors)
   _delay_ms(20);
-  differential_PWM_init();
   sei();           // Enable interrupts
 }
  
@@ -78,7 +77,6 @@ int main(void) {
   uint32_t lastSend = 0;   // Last time a packet was sent
   
   
-  
   sprintf(msg, "SERIAL ACTIVE");
   serial0_print_string(msg);
   while (1) {
@@ -95,7 +93,7 @@ int main(void) {
           motor_d[1] = dataRX[2];
           motor_d[2] = dataRX[3];
           motor_d[3] = dataRX[4];
-          differential_PWM_v3(motor_d);
+          rs_motor_conversion(motor_d);
           break;
         }
 

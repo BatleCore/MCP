@@ -5,5 +5,6 @@
 .vscode/ipch
 platformio.ini
 src/testing_ground.c
+src/test_native.c
 ignore.txt
 ignore_v2.txt
