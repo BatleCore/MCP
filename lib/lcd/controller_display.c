@@ -1,6 +1,8 @@
 // controller display lib
 #include "controller_display.h"
 
+#define auto_mode 0 // not otherwise defined, causing compiling error
+
 volatile ScreenState currentScreen = SCREEN_HOME;
 
 void display_init() {
@@ -77,12 +79,12 @@ void updateLCD() {
 
                 if (dataRX[0] == LDR_REQUEST) {
                     // LEFT:  0000 00hz
-                    sprintf(/*above*/);
+                    // sprintf(/*above*/); // causing compile error
                     lcd_puts(buffer);
 
                     lcd_goto(0x40);
                     // RIGHT: 0000 00hz
-                    sprintf(/*above*/);
+                    // sprintf(/*above*/); // causing compile error
                     lcd_puts(buffer);
                 }
             }
