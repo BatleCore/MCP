@@ -1,19 +1,71 @@
 #include "communication.h"
 
-void comms_init(void) {
+void comms_init() {
     serial2_init();
 }
 
-void requestHOMEdata() {
-    serial2_write_bytes(1, BATTERY_REQUEST, battery_voltage);
+// done
+void requestBATTERYdata() {
+    serial2_write_bytes(1, BATTERY_REQUEST);
 }
 
-void sendHOMEdata() {}
+// done
+void sendBATTERYdata() {
+    // Sends ADC reading of battery level as 8 bit
+    uint16_t batteryVoltage = compressADC(getVoltage());
+    serial2_write_bytes(2, BATTERY_REQUEST, batteryVoltage);
+}
 
-void requestLDRdata() {}
+void requestLIGHTdata() {
+    serial2_write_bytes(1, LIGHT_REQUEST);
+}
 
-void sendLDRdata() {}
+void sendLIGHTdata() {
+    // Get raw data
+    uint16_t lightValues[2];
+    uint16_t frequencies[2];
+    getLightValues(lightValues);
+    getFrequencies(frequencies);
+    // Compress data to within 8 bit for sending
+    uint8_t leftLDR = compressADC(lightValues[0]);
+    uint8_t rightLDR = compressADC(lightValues[1]);
+    uint8_t leftFreq = (frequencies[0] + 5) / 10; // Truncates least significant digit with nearest 10 rounding
+    uint8_t rightFreq = (frequencies[1] + 5) / 10;
+    // Sending data
+    serial2_write_bytes(5, LIGHT_REQUEST, leftLDR, rightLDR, leftFreq, rightFreq); 
+}
 
-void requestRANGEdata() {}
+void requestRANGEdata() {
+    serial2_write_bytes(1, RANGE_REQUEST);
+}
 
-void sendRANGEdata() {}
+void sendRANGEdata() {
+    // Get raw data
+    uint16_t rangedata[3];
+    get_distances(rangedata);
+    // Compress data for sending
+    uint8_t leftDist = compressADC(rangedata[0]);
+    uint8_t centDist = compressADC(rangedata[1]);
+    uint8_t rightDist = compressADC(rangedata[2]);
+    serial2_write_bytes(4,RANGE_REQUEST, leftDist, centDist, rightDist);
+}
+
+void sendMotorControl() {
+    uint8_t motor_data[4];
+    cs_motor_conversion(motor_data);
+    serial2_write_bytes(5, MOTOR_CONTROL, motor_data[0], motor_data[1], motor_data[2], motor_data[3]);
+}
+
+void sendServoControl() {
+    uint8_t servoControl = getServoControl();
+    serial2_write_bytes(2, SERVO_CONTROL, servoControl);
+}
+
+void sendSwitchOperation() {
+    uint8_t opMode = getOperationMode(); // placeholder until auto/ma logic  is defined
+    serial2_write_bytes(2, MODE_SWITCH, opMode);
+}
+
+uint8_t compressADC(uint16_t adr_value) {
+    return (uint8_t)((adr_value * 250UL) / 1023);
+}

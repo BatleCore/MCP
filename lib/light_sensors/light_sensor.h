@@ -26,12 +26,12 @@
 
 // === Global Variables ===
 extern volatile uint32_t isr_counter;   // For debugging
-extern volatile uint16_t leftLDR;       //
-extern volatile uint16_t rightLDR;
+volatile uint16_t leftLDR;
+volatile uint16_t rightLDR;
 volatile int16_t signalLeft;
 volatile int16_t signalRight;
-extern volatile uint16_t freqLeft;
-extern volatile uint16_t freqRight;
+volatile uint16_t freqLeft;
+volatile uint16_t freqRight;
 uint16_t turn;
 uint16_t speed;
 
@@ -40,7 +40,10 @@ void LDR_init(void);
 uint16_t getLDRval(int pin);
 int16_t getSignal(uint16_t LDRval, uint8_t channel);
 uint16_t getFrequency(int16_t signal, uint8_t channel);
-void seekBeacon(uint16_t leftLDR, uint16_t rightLDR);
+void seekBeacon(uint16_t leftLDR, uint16_t rightLDR, uint16_t leftSignal, uint16_t rightSignal);
+void getLightValues(uint16_t* light_values);
+void getSignals(uint16_t* signal_values);
+void getFrequencies(uint16_t* freq_values);
 void LDR_test(void);
 
 #endif /* LIGHT_SENSOR_H_ */

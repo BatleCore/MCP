@@ -27,12 +27,12 @@
 
 // === Global Variables ===
 uint16_t bat_val;             // stores battery voltage reading
-extern uint8_t battery_voltage; // for LCD comms
+uint8_t battery_voltage; // for LCD comms
 bool bat_low;
 
 // === Functions ===
 void battery_init();
-uint8_t valToVoltage(uint16_t adc_value);
+uint8_t getVoltage();
 void testBattery();
 
 #endif /* BATTERY_H_ */
