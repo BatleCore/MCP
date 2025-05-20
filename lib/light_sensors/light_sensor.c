@@ -11,8 +11,8 @@ volatile int16_t signalLeft = 0;
 volatile int16_t signalRight = 0;
 volatile uint16_t freqLeft = 0;
 volatile uint16_t freqRight = 0;
-uint16_t turn = 512;
-uint16_t speed = 512;
+uint16_t turn = 0;
+uint16_t speed = 0;
 
 /*************************************************
 === Light Sensor Initilisation ===
@@ -94,6 +94,22 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
     return last_freq[channel];
 }
 
+void getLightValues(uint16_t* light_values) {
+  light_values[0] = leftLDR;
+  light_values[1] = rightLDR;
+}
+
+void getSignals(uint16_t* signal_values) {
+  signal_values[0] = signalLeft;
+  signal_values[1] = signalRight;
+}
+
+void getFrequencies(uint16_t* freq_values) {
+  freq_values[0] = freqLeft;
+  freq_values[1] = freqRight;
+}
+
+
 /*************************************************
 === Timer4 Compare Flag A Interrupt ===
 
@@ -133,31 +149,38 @@ ISR(TIMER4_COMPA_vect) {
 Inputs: left and right LDR values
 Outputs: None
 *************************************************/
-void seekBeacon(uint16_t leftLDR, uint16_t rightLDR) {
-    //uint8_t motor_data[4];
-    //int bug[5];
-
-    // Calculate turn direction
-    uint16_t total_magnitude = leftLDR + rightLDR;
-    turn = (total_magnitude == 0) ? 512 : (1024 * leftLDR) / (total_magnitude);
+void seekBeacon(uint16_t leftLDR, uint16_t rightLDR, uint16_t leftSignal, uint16_t rightSignal) {
+    uint8_t motor_data[4];
     
+    uint16_t total_magnitude = leftLDR + rightLDR;
+    uint16_t total_signal = leftSignal + rightSignal;
+
     // calculate turn and speed
     if (total_magnitude == 0) { // Prevent divide-by-zero just in case
-        turn = 512;
-        speed = 512;
-    } else if (leftLDR > rightLDR) {
-        // More light on the LEFT -> turn RIGHT -> turn > 512
-        turn = 512 + (512UL * (leftLDR - rightLDR)) / total_magnitude;
-        speed = 1024 - (512 * rightLDR / 1024);
+        turn = 0;
+        speed = 0;
+    } else if (leftSignal< rightSignal) {
+        // More light on the Right -> turn Right
+        motor_data[3] = 1; // turn right
+        motor_data[1] = 1; // forwards
+
+        turn = 250 * leftSignal / total_signal;
+        speed = 250 - (250 * rightLDR / 1023);
     } else {
-        // More light on the RIGHT -> turn LEFT -> turn < 512
-        turn = 512 - (512UL * (rightLDR - leftLDR)) / total_magnitude;
-        speed = 1024 - (512 * rightLDR / 1024);
+        // More light on the RIGHT -> turn LEFT
+        motor_data[3] = 0; // turn left
+        motor_data[1] = 1; // forwards
+
+        turn = 250 * rightSignal / total_magnitude;
+        speed = 250 - (250 * leftLDR / 1023);
     }
 
+    motor_data[2] = turn;
+    motor_data[0] = speed;
+
     // Execute motor instruction
-    //motor_data_conversion(speed, turn, motor_data, bug);
-    //differential_PWM_v3(motor_data);
+    
+    rs_motor_conversion(motor_data);
 }
 
 /*************************************************

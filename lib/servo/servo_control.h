@@ -38,5 +38,6 @@ void servo_callibration(void);
 void gripper_toggle();
 void servo_set_velocity(uint8_t* servo_data);
 void servo_read_joystick(uint8_t* servo_data);
+uint8_t getServoControl();
 
 #endif

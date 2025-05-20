@@ -24,8 +24,8 @@ void monitorBattery() {
   }
 }
 
-uint8_t getVoltage(batteryADC) {
-  return (batteryADC * 84) / 1023;
+uint8_t getVoltage() {
+  return (bat_val * 84) / 1023;
 }
 
 void testBattery() {

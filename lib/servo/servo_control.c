@@ -107,6 +107,17 @@ void servo_read_joystick(uint8_t* servo_data) {
 
 }
 
+// Communication function so that controller does all the computing then sends an instruction over serial
+// Called when controller wants to update the servo
+// sends output (servo position) over serial instead of joystick directions
+uint8_t getServoControl() {
+  uint8_t servo_data[2];
+  servo_read_joystick(servo_data);
+  servo_set_velocity(servo_data);
+  uint8_t servo_control = SERVO_POS;
+  return servo_control;
+}
+
 
 // TIMSK1 |= (1<<TOIE1); // Bit 0 – TOIEn: Timer/Countern, Overflow Interrupt Enable
 // ISR(TIMER1_OVF_vect) {
