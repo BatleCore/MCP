@@ -16,7 +16,7 @@
 
 //include custom header files
 #include "PIN_ASSIGNMENT.h"
-#include "communication.h"
+// #include "communication.h"
 #include "motor_control.h"
 #include "servo_control.h"
 

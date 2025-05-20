@@ -1,9 +1,9 @@
 #include "auto_mode.h"
 
-#define MOTOR_MAX 150
+#define MOTOR_MAX 250
 uint16_t distance_values[3] = {0}; // initialize all to 0
 uint8_t motor_data[4] = {0};
-int front_thresh;
+int front_thresh = 100;
 // motor_data[0]: speed magnitude
 // motor_data[1]: speed direction
 // motor_data[2]: turning magnitude
@@ -43,7 +43,8 @@ void mode_2() {
   serial0_print_string(msg);
   L = (float)distance_values[0];
   R = (float)distance_values[2];
-  if (distance_values[1] > 100) { // && distance_values[0] != DIST_SENSOR_MAX_ERR && distance_values[2] != DIST_SENSOR_MAX_ERR
+  if (distance_values[1] > front_thresh) { // && distance_values[0] != DIST_SENSOR_MAX_ERR && distance_values[2] != DIST_SENSOR_MAX_ERR
+    front_thresh = 100;
     if (distance_values[0] > distance_values[2]) { // need to adjust left
       turn_r = (L - R) / (L + R);
       motor_data[0] = MOTOR_MAX;  // speed magnitude inverse-proportional to imballance
@@ -62,11 +63,13 @@ void mode_2() {
       // serial0_print_string(msg);
     }
   } else { // stop
-    sprintf(msg, "STOP\n");
-    serial0_print_string(msg);
-    motor_data[0] = 100;
+    // sprintf(msg, "STOP\n");
+    // serial0_print_string(msg);
+    motor_data[0] = MOTOR_MAX;
     motor_data[1] = 0;
-    motor_data[3] = !motor_data[3];
+    motor_data[2] = 250;
+    front_thresh = 125;
+    // motor_data[3] = !motor_data[3];
       // motor_stop();
   }
   rs_motor_conversion(motor_data);
