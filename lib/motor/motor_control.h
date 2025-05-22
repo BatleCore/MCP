@@ -18,7 +18,7 @@
 
 //constants
 #define HYST 0.1
-#define TURNING_CAP 0.5
+#define TURNING_CAP 1
 #define SPEED_INVERT 1
 #define TURN_INVERT 1
 

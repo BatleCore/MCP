@@ -8,8 +8,7 @@ void motor_data_conversion(int speed, int turning, uint8_t* results, int* bug)
   Outputs:
     results[4] = {left_duty, left_dir, right_duty, right_dir}
       duty:  0–250 (PWM speed)
-      dir:   0 = reverse, 1 = stop, 2 = forward
-    bug[5] (optional): debug info [slow, fast, turn_mag, speed, dir]
+      dir:   0 = reverse / left , 1 = forward / right
 
 void differential_PWM_v3(uint8_t* motor_data)
   Applies PWM and direction to motors based on data from motor_data_conversion().
@@ -280,7 +279,7 @@ void rs_motor_conversion(uint8_t* input_data) {
   uint8_t travel_dir = input_data[1]; // velocity direction ( forward, reverse )
   uint8_t turn_mag = input_data[2]; // absolute turning ( 0 -> 250 )
   uint8_t turn_dir = input_data[3]; // turning direction
-  char msg[40];
+  char msg[50];
 
   // sprintf(msg, "\nrs_motor_conversion\nsm: %d\nsd: %d\ntm: %d\ntd: %d\n", input_data[0], input_data[1], input_data[2], input_data[3]);
   // serial0_print_string(msg);
@@ -327,24 +326,29 @@ void rs_motor_conversion(uint8_t* input_data) {
   // serial0_print_string(msg);
 
   float ss_speed_p = (slow_side - 250.0) / 250;
+  ss_speed_p = (ss_speed_p > 0) ? ss_speed_p : ss_speed_p * -1;
   int ss_turn_d = (slow_side > 250) ? 1 : 0;
   float fs_speed_p = (fast_side - 250.0) / 250;
+  fs_speed_p = (fs_speed_p > 0) ? fs_speed_p : fs_speed_p * -1;
   int fs_turn_d = (fast_side > 250) ? 1 : 0;
+
+  // sprintf(msg, "ssp: %d\nfsp: %d\n", ss_speed_p, fs_speed_p);
+  // serial0_print_string(msg);
 
   // XOR
   if ( turn_dir == travel_dir) { 
     // Left side slower
-    results[0] = ss_speed_p * ss_speed_p * 250;
+    results[0] = ss_speed_p * 250;
     results[1] = ss_turn_d;
     // right side faster
-    results[2] = fs_speed_p * fs_speed_p * 250;
+    results[2] = fs_speed_p * 250;
     results[3] = fs_turn_d;
   } else {
     // Left side faster
-    results[0] = fs_speed_p * fs_speed_p * 250;
+    results[0] = fs_speed_p * 250;
     results[1] = fs_turn_d;
     // right side slower
-    results[2] = ss_speed_p * ss_speed_p * 250;
+    results[2] = ss_speed_p * 250;
     results[3] = ss_turn_d;
   }
   // sprintf(msg, "\nresults\nL spd: %d\nL dir: %d\nR spd: %d\nR dir: %d\n", results[0], results[1], results[2], results[3]);
@@ -367,6 +371,8 @@ void cs_motor_conversion(uint8_t* results){
 
 
   /* TRIMMING FOR STICK-DRIFT */
+  // revisit exponential steering
+  // apply BEFORE steering modifiers
   if (speed > centre_TOP)
   { // forward
     travel_mag = (speed - centre_TOP) * (250.0 / centre_BOT);
