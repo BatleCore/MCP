@@ -21,6 +21,7 @@
 #include "battery.h"
 #include "light_sensor.h"
 #include "dist_sensor.h"
+#include "servo_control.h"
 
 // === Constants and Configuration ===
 

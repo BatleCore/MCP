@@ -19,7 +19,8 @@
 #include "battery.h"
 #include "light_sensor.h"
 #include "dist_sensor.h"
-#include "controller_display.h"
+#include "servo_control.h"
+#include "motor_control.h"
 
 // === Constants and Configuration ===
 // SERIAL PACKET CODES :
@@ -46,7 +47,7 @@ void requestRANGEdata();
 void sendRANGEdata();
 void sendMotorControl();
 void sendServoControl();
-void sendSwitchOperation();
+//void sendSwitchOperation();
 uint8_t compressADC(uint16_t adr_value);
 
 

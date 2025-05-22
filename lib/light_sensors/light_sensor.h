@@ -32,6 +32,8 @@ volatile int16_t signalLeft;
 volatile int16_t signalRight;
 volatile uint16_t freqLeft;
 volatile uint16_t freqRight;
+volatile uint16_t baselineLeft;
+volatile uint16_t baselineRight;
 uint16_t turn;
 uint16_t speed;
 

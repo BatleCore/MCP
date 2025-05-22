@@ -42,6 +42,12 @@ int main(void) {
             sprintf(msg, "\nRfreq: %d   Rval: %d", freqRight, rightLDR);
             serial0_print_string(msg);
 
+            sprintf(msg, "\nLsig %d Rsig: %d", signalLeft, signalRight);
+            serial0_print_string(msg);
+
+            sprintf(msg, "\nLbase %d Rbase: %d", baselineLeft, baselineRight);
+            serial0_print_string(msg);
+
             sprintf(msg, "\nBeacon Turn: %u  Speed: %u\n", turn, speed);
             serial0_print_string(msg);
 

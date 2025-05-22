@@ -11,6 +11,8 @@ volatile int16_t signalLeft = 0;
 volatile int16_t signalRight = 0;
 volatile uint16_t freqLeft = 0;
 volatile uint16_t freqRight = 0;
+volatile uint16_t baselineLeft = 0;
+volatile uint16_t baselineRight = 0;
 uint16_t turn = 0;
 uint16_t speed = 0;
 
@@ -46,9 +48,15 @@ Outputs: uint16 signal
 *************************************************/
 int16_t getSignal(uint16_t LDRval, uint8_t channel) {
 
-    static uint16_t baseline[2] = {0};                          // Array storing left[0] and right [1] baseline light levels
-    baseline[channel] = (baseline[channel] * 9 + LDRval) / 10;  // Update baseline using exponential moving average
-    return (int16_t)LDRval - (int16_t)baseline[channel];        // Return signed deviation from baseline
+  static uint16_t baseline[2] = {0};                          // Array storing left[0] and right [1] baseline light levels
+  baseline[channel] = (baseline[channel] * 99UL + LDRval) / 100;  // Update baseline using exponential moving average
+  return (int16_t)LDRval - (int16_t)baseline[channel];        // Return signed deviation from baseline
+}
+
+int16_t getBaseline(uint16_t LDRval, uint8_t channel) {
+  static uint16_t baseline[2] = {0};                          // Array storing left[0] and right [1] baseline light levels
+  baseline[channel] = (baseline[channel] * 99UL + LDRval) / 100;  // Update baseline using exponential moving average
+  return baseline[channel]; 
 }
 
 /*************************************************
@@ -75,7 +83,7 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
     static uint16_t edge_counter[2]   = {0};
 
     uint32_t now = milliseconds_now();
-    if (last_signal[channel] < 0 && signal >= 0 && signal < SIGNAL_THRESHOLD) {
+    if (last_signal[channel] < 0 && signal >= 0 && signal > SIGNAL_THRESHOLD) {
         uint32_t dt = now - last_time[channel];
         last_time[channel] = now;
         if (dt > 47) {
@@ -129,6 +137,9 @@ ISR(TIMER4_COMPA_vect) {
     leftLDR = adc_read(PIN_LDR_LEFT);
     rightLDR = adc_read(PIN_LDR_RIGHT);
     // Check for signal against ambient light level
+    baselineLeft = getBaseline(leftLDR, 0);
+    baselineRight = getBaseline(rightLDR, 1);
+
     signalLeft = getSignal(leftLDR, 0);
     signalRight = getSignal(rightLDR, 1);
     // Calculate potential beacon frequency
