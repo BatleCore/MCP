@@ -55,8 +55,10 @@ int main(void) {
     switch (current_mode)
     {
     case AUTO_MODE:
+      // auto_init(); // eg. open servo
       while (1) {
         // read auto serial
+        serial_forAuto();
         if ( current_mode != AUTO_MODE ) {
           break;
         } else {
@@ -67,7 +69,7 @@ int main(void) {
     
     case MANUAL_MODE:
       while (1) {
-        // read auto serial
+        serial_forManual(); // 
         if ( current_mode != MANUAL_MODE ) {
           break;
         } else {
@@ -79,35 +81,96 @@ int main(void) {
     default:
       break;
     }
+  }
+  return 0;
+}
 
-    // Receive Serial Coms
-    if (serial2_available()) { // used when controlling via serial
-      serial2_get_data(dataRX, PACKETSIZE);
- 
-      switch (dataRX[0]) {
- 
-        case JOYSTICK_MOTOR_READ: {
-          // Use joystick X/Y to update motor control
-          motor_fromSerial(dataRX);
-          break;
-        }
+void serial_forAuto() {
+  if (serial2_available()) { // used when controlling via serial
+    serial2_get_data(dataRX, PACKETSIZE);
 
-        case JOYSTICK_SERVO_READ: { // this needs a deep dive to clean
-          servo_d[0] = dataRX[1];
-          servo_d[1] = dataRX[2];
-          servo_set_velocity(servo_d);
-          sprintf(msg, "\nvel: %d, dir: %d", servo_d[0], servo_d[1]);
-          serial0_print_string(msg);
-          break;
-        }
+    switch (dataRX[0]) {
 
-        default: {
-          // Unrecognized command
-          serial2_write_bytes(1, REQUEST_ERROR);
-          break;
-        }
+      case LIGHT_REQUEST: {
+        sendLIGHTdata();
+        break;
+      }
+
+      case RANGE_REQUEST: {
+        sendRANGEdata();
+        break;
+      }
+
+      case BATTERY_REQUEST: {
+        sendBATTERYdata();
+        break;
+      }
+      
+      case MOTOR_CONTROL: {
+        // not controlled in auto mode
+        // motor_fromSerial(dataRX);
+        break;
+      }
+
+      case SERVO_CONTROL: {
+        // not controlled in auto mode
+        // servo_set_velocity(dataRX);
+        break;
+      }
+
+      case MODE_SWITCH: {
+        current_mode = dataRX[1]; // either AUTO_MODE or MANUAL_MODE
+        break;
+      }
+      default: {
+        // Unrecognized command
+        serial2_write_bytes(1, REQUEST_ERROR);
+        break;
       }
     }
   }
-  return 0;
+}
+
+void serial_forManual() {
+  if (serial2_available()) { // used when controlling via serial
+    serial2_get_data(dataRX, PACKETSIZE);
+
+    switch (dataRX[0]) {
+
+      case LIGHT_REQUEST: {
+        sendLIGHTdata();
+        break;
+      }
+
+      case RANGE_REQUEST: {
+        sendRANGEdata();
+        break;
+      }
+
+      case BATTERY_REQUEST: {
+        sendBATTERYdata();
+        break;
+      }
+      
+      case MOTOR_CONTROL: {
+        motor_fromSerial(dataRX); // operates motors directly
+        break;
+      }
+
+      case SERVO_CONTROL: {
+        servo_fromSerial(dataRX); // operates servo directly
+        break;
+      }
+
+      case MODE_SWITCH: {
+        current_mode = dataRX[1]; // either AUTO_MODE or MANUAL_MODE
+        break;
+      }
+      default: {
+        // Unrecognized command
+        serial2_write_bytes(1, REQUEST_ERROR);
+        break;
+      }
+    }
+  }
 }
