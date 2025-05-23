@@ -52,6 +52,7 @@ int main(void) {
     {
     case AUTO_MODE:
       auto_init(); // eg. open servo
+      // serial0_print_string("in automode");
       while (1) {
         // read auto serial
         serial_forAuto();
@@ -59,14 +60,17 @@ int main(void) {
           break;
         } else {
           auto_loop();
+          _delay_ms(50); // test line, may be cycling too fast
           // do auto mode
         }
       }
       break;
     
     case MANUAL_MODE:
+      serial0_print_string("in manual mode");
       while (1) {
-        serial_forManual(); // 
+        serial_forManual();
+        // serial0_print_string("in manual loop/n");
         if ( current_mode != MANUAL_MODE ) {
           break;
         } else {
@@ -155,6 +159,7 @@ void serial_forManual() {
       }
 
       case SERVO_CONTROL: {
+        serial0_print_string("servo sig recieved");
         servo_fromSerial(dataRX); // operates servo directly
         break;
       }

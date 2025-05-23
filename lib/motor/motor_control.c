@@ -21,6 +21,8 @@ void differential_PWM_v3(uint8_t* motor_data)
 
 uint8_t motor_data[4] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
 
+char msg[40];
+
 void motor_init() {
   // set motor output pins
   DDR_CONTROL |= (1<<PIN_ML_F)|(1<<PIN_ML_R)|(1<<PIN_MR_F)|(1<<PIN_MR_R);
@@ -38,12 +40,17 @@ void motor_init() {
   PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
   PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
   PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
+  motor_init_params();
+}
 
-  // calculate values for motor functions - these remain constant
-  centre_BOT = 512 * (1 - HYST);
-  centre_TOP = 1023 - centre_BOT;
-  hyst_range = centre_TOP - centre_BOT;
-  true_range = 1023 - hyst_range;
+// important for controller
+void motor_init_params() {
+  
+    // calculate values for motor functions - these remain constant
+    centre_BOT = 512 * (1 - HYST);
+    centre_TOP = 1023 - centre_BOT;
+    hyst_range = centre_TOP - centre_BOT;
+    true_range = 1023 - hyst_range;
 
 }
 
@@ -366,10 +373,16 @@ void cs_motor_conversion(uint8_t* results){
   uint16_t speed = adc_read(PIN_JOY_L_Y);
   uint16_t turning = adc_read(PIN_JOY_L_X);
 
+  // sprintf(msg, "speed: %d, turn: %d\n", speed, turning);
+  // serial0_print_string(msg);
+
+  // sprintf(msg, "cTOP: %d cBOT: %d\n", centre_TOP, centre_BOT);
+  // serial0_print_string(msg);
 
   /* TRIMMING FOR STICK-DRIFT */
   // revisit exponential steering
   // apply BEFORE steering modifiers
+
   if (speed > centre_TOP)
   { // forward
     travel_mag = (speed - centre_TOP) * (250.0 / centre_BOT);
@@ -397,6 +410,9 @@ void cs_motor_conversion(uint8_t* results){
     turn_mag = 0;
     turn_dir = !(TURN_INVERT);
   }
+  // sprintf(msg, "travmag: %d, turnmag: %d\n\n", travel_mag, turn_mag);
+  // serial0_print_string(msg);
+
   results[0] = travel_mag;
   results[1] = travel_dir;
   results[2] = turn_mag;
@@ -462,7 +478,7 @@ void motor_turn_modifier(int turn_dir) {
   else {
     temp_value = 250 - motor_data[2];
   }
-  temp_value += 100 * (-1 + turn_dir * 2);
+  temp_value += 50 * (-1 + turn_dir * 2);
 
   if ( temp_value > 250) { 
     motor_data[2] = temp_value - 250;

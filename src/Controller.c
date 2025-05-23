@@ -41,7 +41,8 @@ void setup() {
   serial0_init();      // Teminal Serial Monitor
   milliseconds_init();   // For timing control
   display_init();
-  
+  motor_init_params();
+
   // ADC PINS SET TO INPUT
   DDR_JOYLEFT &= ~(1<<PIN_JOY_L_X);
   DDR_JOYLEFT &= ~(1<<PIN_JOY_L_Y);

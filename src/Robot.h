@@ -23,6 +23,7 @@
 #include "light_sensor.h"
 #include "motor_control.h"
 #include "servo_control.h"
+#include "auto_mode.h"
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"

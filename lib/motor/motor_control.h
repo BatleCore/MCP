@@ -18,9 +18,10 @@
 
 //constants
 #define HYST 0.1
-#define TURNING_CAP 1
-#define SPEED_INVERT 1
-#define TURN_INVERT 1
+#define TURNING_CAP 1 // 1 is good for auto, manual steering isnt so smooth though
+
+#define SPEED_INVERT 0
+#define TURN_INVERT 0
 
 #define MOTOR_MAX 250
 #define MOTOR_AUTO_SPEED 250
@@ -39,6 +40,7 @@
 //functions
 void motor_data_conversion(uint8_t* results); // to be removed. broken into: rs_motor_conversion, cs_motor_conversion
 void motor_init();
+void motor_init_params();
 void differential_PWM_v3(uint8_t* motor_data); // to be cleaned / renamed
 void motor_test();
 void timerPWM_init(); // not used? double check

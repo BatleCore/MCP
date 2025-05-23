@@ -1,5 +1,7 @@
 #include "communication.h"
 
+char msg[40];
+
 void comms_init() {
     serial2_init();
 }
@@ -53,16 +55,20 @@ void sendRANGEdata() {
 
 // Controller
 void sendMotorControl() {
-    uint8_t motor_data[4];
-    cs_motor_conversion(motor_data);
-    serial2_write_bytes(5, MOTOR_CONTROL, motor_data[0], motor_data[1], motor_data[2], motor_data[3]);
+    uint8_t motor_toSerial[4];
+    cs_motor_conversion(motor_toSerial);
+    serial2_write_bytes(5, MOTOR_CONTROL, motor_toSerial[0], motor_toSerial[1], motor_toSerial[2], motor_toSerial[3]);
+    // sprintf(msg, "0: %d, 1: %d\n2: %d, 3: %d\n\n", motor_toSerial[0], motor_toSerial[1], motor_toSerial[2], motor_toSerial[3]);
+    // serial0_print_string(msg);
 }
 
 // Controller
 void sendServoControl() {
     uint8_t servoControl[2];
     getServoControl(servoControl);
-    serial2_write_bytes(2, SERVO_CONTROL, servoControl[0], servoControl[1]);
+    serial2_write_bytes(3, SERVO_CONTROL, servoControl[0], servoControl[1]);
+    sprintf(msg, "0: %d, 1: %d\n", servoControl[0], servoControl[1]);
+    serial0_print_string(msg);
 }
 
 // Controller

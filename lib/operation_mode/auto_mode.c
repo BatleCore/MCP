@@ -15,6 +15,9 @@ void auto_init() {
 }
 
 void mode_5() {
+  // currently a 3/5
+  // 4: no jitter
+  // 5: no hesitation 
 
   get_distances(distance_values);
 
@@ -30,15 +33,16 @@ void mode_5() {
     motor_straight_forward();
   }
 
+  // the "wall avoidance" below introduces jitter
   // if (distance_values[0] < side_hard_thresh) { 
   //   sprintf(msg, "left hard limit\n");
   //   serial0_print_string(msg);
-  //   motor_turn_modifier(0);
+    // motor_turn_modifier(1);
   // }
   // if (distance_values[1] < side_hard_thresh) { 
   //   sprintf(msg, "right hard limit\n");
   //   serial0_print_string(msg);
-  //   motor_turn_modifier(1);
+    // motor_turn_modifier(0);
   // }
 
   // sprintf(msg, "Speed: %d, %d\nTurning: %d, %d\n", motor_data[0], motor_data[1], motor_data[2], motor_data[3]);
