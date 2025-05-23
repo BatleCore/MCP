@@ -19,6 +19,7 @@
 void auto_init();
 void mode_5();
 void auto_loop();
+int turn_bias_manager(uint8_t left_dist, uint8_t right_dist);
 
 
 #endif

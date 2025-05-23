@@ -32,7 +32,7 @@
 
 //variables - scope/global
 uint8_t dataRX[PACKETSIZE] = {0};
-int current_mode = MANUAL_MODE;
+int current_mode = AUTO_MODE;
 
 
 //functions
