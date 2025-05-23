@@ -160,7 +160,7 @@ void serial_forManual() {
       }
 
       case SERVO_CONTROL: {
-        serial0_print_string("servo sig recieved");
+        // serial0_print_string("servo sig recieved");
         servo_fromSerial(dataRX); // operates servo directly
         break;
       }

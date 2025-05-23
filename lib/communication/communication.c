@@ -11,13 +11,10 @@ void requestBATTERYdata() {
     serial2_write_bytes(1, BATTERY_REQUEST);
 }
 
-// done
+// done - checked and working
 void sendBATTERYdata() {
     // Sends ADC reading of battery level as 8 bit
-    // uint8_t batteryVoltage = getVoltage();
-    uint8_t batteryVoltage = 65;
-    sprintf(msg, "bat: %d\n", batteryVoltage);
-    serial0_print_string(msg);
+    uint8_t batteryVoltage = getVoltage();
     serial2_write_bytes(2, BATTERY_REQUEST, batteryVoltage);
 }
 

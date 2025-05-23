@@ -1,7 +1,10 @@
 //BATTERY VOLTAGE MONITORING
 #include "battery.h"
 
+char msg[30];
+
 void battery_init() {
+  adc_init();
   DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED);  // Configure digital output for LED control
   PORT_BATTERY &= ~(1<<PIN_BATTERY_LED);    // Initalise as off
 }
@@ -11,7 +14,7 @@ void monitorBattery() {
   static uint32_t lastTime[2];
   uint32_t currTime = milliseconds_now();
 
-    if (currTime - lastTime[0] >= CHECK_TIME) {
+  if (currTime - lastTime[0] >= CHECK_TIME) {
     bat_val = adc_read(PIN_BATTERY_SENSE);
     bat_low = (bat_val <= BATTERY_THRESH);
     lastTime[0] = currTime;
@@ -25,7 +28,8 @@ void monitorBattery() {
 
 // Returns ADC converted to voltage (0-8.4V)
 uint8_t getVoltage() {
-  return (bat_val * 84UL) / 1023;
+  bat_val = (adc_read(PIN_BATTERY_SENSE) * 84UL) / 1023;
+  return bat_val;
 }
 
 // Debugging Function - Prints raw ADC values
