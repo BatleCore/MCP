@@ -29,6 +29,7 @@
 #define REQUEST_ERROR  0xEE  // Error / fallback code (not used here)
 
 // === Global Variables ===
+#define PACKETSIZE 6
 
 // === Functions ===
 void comms_init();

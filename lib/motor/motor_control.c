@@ -406,3 +406,9 @@ void cs_motor_conversion(uint8_t* results){
   results[3] = turn_dir;
 }
 
+void motor_fromSerial(uint8_t* motor_serial) {
+  for (int i = 0; i < 4; i++) {
+    motor_data_scope[i] = motor_serial[i+1];
+  }
+  rs_motor_conversion(motor_data_scope);
+}

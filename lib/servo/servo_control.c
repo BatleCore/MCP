@@ -70,7 +70,7 @@ void gripper_toggle() {
   }
 }
 
-void servo_set_velocity(uint8_t* servo_data) {
+void servo_set_velocity(uint8_t* servo_data) { // feature not functional - currently used to set by bool
   if (servo_data[1] == 2) {
     servo_set_pos(SERVO_PULSE_CLOSE);
   } else if (servo_data[1] == 0) {
@@ -110,7 +110,7 @@ void servo_read_joystick(uint8_t* servo_data) {
 // Communication function so that controller does all the computing then sends an instruction over serial
 // Called when controller wants to update the servo
 // sends output (servo position) over serial instead of joystick directions
-uint8_t getServoControl() {
+uint8_t getServoControl() { // not used?
   uint8_t servo_data[2];
   servo_read_joystick(servo_data);
   servo_set_velocity(servo_data);
