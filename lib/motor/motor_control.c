@@ -340,7 +340,8 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
   // serial0_print_string(msg);
 
   // XOR
-  if ( motor_data[3] == motor_data[1]) { 
+  // if ( motor_data[3] == motor_data[1]) { 
+  if ( motor_data[3] ) { 
     // Left side slower
     results[0] = ss_speed_p * 250;
     results[1] = ss_turn_d;
@@ -385,12 +386,12 @@ void cs_motor_conversion(uint8_t* results){
 
   if (speed > centre_TOP)
   { // forward
-    travel_mag = (speed - centre_TOP) * (250.0 / centre_BOT);
+    travel_mag = ((speed - centre_TOP*1.0)/centre_BOT) * ((speed - centre_TOP*1.0)/centre_BOT) * (250.0);
     travel_dir = (SPEED_INVERT);
   }
   else if (speed < centre_BOT)
   {
-    travel_mag = (centre_BOT - speed) * (250.0 / centre_BOT);
+    travel_mag = ((centre_BOT - speed*1.0)/centre_BOT) * ((centre_BOT - speed*1.0)/centre_BOT) * (250.0);
     travel_dir = !(SPEED_INVERT);
   } else {
     travel_mag = 0;
@@ -399,12 +400,12 @@ void cs_motor_conversion(uint8_t* results){
 
   if (turning > centre_TOP)
   { // RIGHT
-    turn_mag = (turning - centre_TOP) * (250.0 / centre_BOT);
+    turn_mag = ((turning - centre_TOP)*1.0/centre_BOT) * ((turning - centre_TOP*1.0)/centre_BOT) * (250 - travel_mag*0.6);
     turn_dir = (TURN_INVERT);
   }
   else if (turning < centre_BOT)
   { // LEFT
-    turn_mag = (centre_BOT - turning) * (250.0 / centre_BOT);
+    turn_mag = ((centre_BOT - turning)*1.0/centre_BOT) * ((centre_BOT - turning)*1.0/centre_BOT) * (250 - travel_mag*0.6);
     turn_dir = !(TURN_INVERT);
   } else { 
     turn_mag = 0;

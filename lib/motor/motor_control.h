@@ -17,7 +17,7 @@
 #include "PIN_ASSIGNMENT.h"
 
 //constants
-#define HYST 0.1
+#define HYST 0.05
 #define TURNING_CAP 1 // 1 is good for auto, manual steering isnt so smooth though
 
 #define SPEED_INVERT 0

@@ -64,15 +64,16 @@ int main(void) {
   while (1) {
     // Check if 20ms has passed since last send
     // This limits packet rate to 50Hz (fast, but not overwhelming)
-    if (milliseconds_now() - lastSend >= 20) {
+    if (milliseconds_now() - lastSend >= 100) {
       lastSend = milliseconds_now();
       
       sendSwitchOperation();
       requestBATTERYdata();
-      requestLIGHTdata();
-      requestRANGEdata();
-      updateLCD();
+      // requestLIGHTdata();
+      // requestRANGEdata();
       
+      lcd_clrscr();
+      updateLCD();
       sendMotorControl();
       sendServoControl();
 

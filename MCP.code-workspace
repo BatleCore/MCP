@@ -12,7 +12,8 @@
 			"delay.h": "c",
 			"motor_control.h": "c",
 			"controller_display.h": "c",
-			"communication.h": "c"
+			"communication.h": "c",
+			"controller.h": "c"
 		}
 	}
 }

@@ -25,7 +25,7 @@ void monitorBattery() {
 
 // Returns ADC converted to voltage (0-8.4V)
 uint8_t getVoltage() {
-  return (bat_val * 84) / 1023;
+  return (bat_val * 84UL) / 1023;
 }
 
 // Debugging Function - Prints raw ADC values

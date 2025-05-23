@@ -74,6 +74,7 @@ int main(void) {
         if ( current_mode != MANUAL_MODE ) {
           break;
         } else {
+          // appears to be a delay in this cycle. motor controls have latency
           // do manual mode ( not much else to do right now... )
         }
       }      
