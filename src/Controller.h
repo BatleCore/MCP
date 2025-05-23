@@ -19,10 +19,17 @@
 //include custom header files
 #include "PIN_ASSIGNMENT.h"
 #include "communication.h"
+#include "motor_control.h"
 #include "servo_control.h"
+#include "controller_display.h"
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
+#define PORT_JOYLEFT PORTK
+#define DDR_JOYLEFT DDRK
+#define PORT_JOYRIGHT PORTF
+#define DDR_JOYRIGHT DDRF
+
 
 // custom functions:
 void print_to_lcd(char * msg1, int16_t val1, int16_t val2);

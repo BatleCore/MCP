@@ -16,6 +16,7 @@ void sendBATTERYdata() {
     serial2_write_bytes(2, BATTERY_REQUEST, batteryVoltage);
 }
 
+// Controller
 void requestLIGHTdata() {
     serial2_write_bytes(1, LIGHT_REQUEST);
 }

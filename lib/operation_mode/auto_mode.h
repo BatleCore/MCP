@@ -15,17 +15,10 @@
 
 //constants
 
-
-
 //functions
+void auto_init();
 void mode_5();
-void motor_stop();
-void motor_straight_forward();
-void motor_left_forward();
-void motor_right_forward();
-void motor_turn_forward(int turn_dir);
-void motor_turn_spot(int turn_dir);
-void motor_turn_modifier(int turn_dir);
+void auto_loop();
 
 
 #endif

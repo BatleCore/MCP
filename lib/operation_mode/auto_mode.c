@@ -47,3 +47,11 @@ void mode_5() {
   rs_motor_conversion();
 
 }
+
+void auto_loop() {
+  if (0) {
+    // follow beacon
+  } else {
+    mode_5();
+  }
+}

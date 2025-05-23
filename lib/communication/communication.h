@@ -41,7 +41,7 @@ void requestRANGEdata();
 void sendRANGEdata();
 void sendMotorControl();
 void sendServoControl();
-//void sendSwitchOperation();
+void sendSwitchOperation();
 uint8_t compressADC(uint16_t adr_value);
 
 

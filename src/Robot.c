@@ -51,13 +51,14 @@ int main(void) {
     switch (current_mode)
     {
     case AUTO_MODE:
-      // auto_init(); // eg. open servo
+      auto_init(); // eg. open servo
       while (1) {
         // read auto serial
         serial_forAuto();
         if ( current_mode != AUTO_MODE ) {
           break;
         } else {
+          auto_loop();
           // do auto mode
         }
       }
@@ -69,7 +70,7 @@ int main(void) {
         if ( current_mode != MANUAL_MODE ) {
           break;
         } else {
-          // do manual mode
+          // do manual mode ( not much else to do right now... )
         }
       }      
       break;

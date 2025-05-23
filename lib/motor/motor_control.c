@@ -19,8 +19,7 @@ void differential_PWM_v3(uint8_t* motor_data)
 #include <stdio.h>
 #include <stdint.h>
 
-uint8_t motor_data_scope[4] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
-
+uint8_t motor_data[4] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
 
 void motor_init() {
   // set motor output pins
@@ -168,7 +167,7 @@ void differential_PWM_v3(uint8_t* motor_data){
     0 = reverse
   */
 
-  char msg[20];
+  // char msg[20];
 
   // uint16_t left_duty = 1500 + (motor_data[0]) * (500/250.0);
   // uint8_t left_dir = motor_data[1];
@@ -277,7 +276,7 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
   */
 
   // No output data - controls motors directly
-  char msg[50];
+  // char msg[50];
 
   // sprintf(msg, "\nrs_motor_conversion\nsm: %d\nsd: %d\ntm: %d\ntd: %d\n", input_data[0], input_data[1], input_data[2], input_data[3]);
   // serial0_print_string(msg);
@@ -290,18 +289,18 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
   // this centres the speed value to be +- around 250
   // useful for applying turning modifier
 
-  if (motor_data_scope[1]) { // forward
-    av_speed = motor_data_scope[0] + 250;
+  if (motor_data[1]) { // forward
+    av_speed = motor_data[0] + 250;
   } else { // reverse
-    av_speed = 250 - motor_data_scope[0];
+    av_speed = 250 - motor_data[0];
   }
 
   // sprintf(msg, "av speed: %d\n", av_speed);
   // serial0_print_string(msg);
   // apply offset for seperate motors
 
-  int fast_side = av_speed + motor_data_scope[2] * TURNING_CAP;
-  int slow_side = av_speed - motor_data_scope[2] * TURNING_CAP;
+  int fast_side = av_speed + motor_data[2] * TURNING_CAP;
+  int slow_side = av_speed - motor_data[2] * TURNING_CAP;
 
   // sprintf(msg, "fastside: %d\nslowside: %d\n", fast_side, slow_side);
   // serial0_print_string(msg);
@@ -312,12 +311,12 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
   if (fast_side > 500)
   {
     fast_side = 500;
-    slow_side = 500 - 2 * motor_data_scope[2] * TURNING_CAP;
+    slow_side = 500 - 2 * motor_data[2] * TURNING_CAP;
   }
   else if (slow_side < 0)
   {
     slow_side = 0;
-    fast_side = 2 * motor_data_scope[2] * TURNING_CAP;
+    fast_side = 2 * motor_data[2] * TURNING_CAP;
   }
 
   // sprintf(msg, "clamped\nfastside: %d\nslowside: %d\n", fast_side, slow_side);
@@ -334,7 +333,7 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
   // serial0_print_string(msg);
 
   // XOR
-  if ( motor_data_scope[3] == motor_data_scope[1]) { 
+  if ( motor_data[3] == motor_data[1]) { 
     // Left side slower
     results[0] = ss_speed_p * 250;
     results[1] = ss_turn_d;
@@ -406,7 +405,7 @@ void cs_motor_conversion(uint8_t* results){
 
 void motor_fromSerial(uint8_t* motor_serial) {
   for (int i = 0; i < 4; i++) {
-    motor_data_scope[i] = motor_serial[i+1];
+    motor_data[i] = motor_serial[i+1];
   }
   rs_motor_conversion();
 }
@@ -414,67 +413,67 @@ void motor_fromSerial(uint8_t* motor_serial) {
 // motor_data macros
 
 void motor_stop(){
-  motor_data_scope[0] = 0;
-  motor_data_scope[1] = 1; // forward, always forward
-  motor_data_scope[2] = 0; // straight
-  motor_data_scope[3] = 0; // left  (not significant)
+  motor_data[0] = 0;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = 0; // straight
+  motor_data[3] = 0; // left  (not significant)
 }
 
 void motor_straight_forward(){
-  motor_data_scope[0] = MOTOR_AUTO_SPEED;
-  motor_data_scope[1] = 1; // forward, always forward
-  motor_data_scope[2] = 0; // straight
-  motor_data_scope[3] = 0; // left  (not significant)
+  motor_data[0] = MOTOR_AUTO_SPEED;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = 0; // straight
+  motor_data[3] = 0; // left  (not significant)
 }
 
 void motor_left_forward(){
-  motor_data_scope[0] = MOTOR_AUTO_SPEED;
-  motor_data_scope[1] = 1; // forward, always forward
-  motor_data_scope[2] = MOTOR_AUTO_TURN;
-  motor_data_scope[3] = 0; // left
+  motor_data[0] = MOTOR_AUTO_SPEED;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[3] = 0; // left
 }
 
 void motor_right_forward(){
-  motor_data_scope[0] = MOTOR_AUTO_SPEED;
-  motor_data_scope[1] = 1; // forward, always forward
-  motor_data_scope[2] = MOTOR_AUTO_TURN;
-  motor_data_scope[3] = 1; // right
+  motor_data[0] = MOTOR_AUTO_SPEED;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[3] = 1; // right
 }
 
 void motor_turn_forward(int turn_dir){
-  motor_data_scope[0] = MOTOR_AUTO_SPEED;
-  motor_data_scope[1] = 1; // forward, always forward
-  motor_data_scope[2] = MOTOR_AUTO_TURN;
-  motor_data_scope[3] = turn_dir; // passed as arg, 0 or 1
+  motor_data[0] = MOTOR_AUTO_SPEED;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[3] = turn_dir; // passed as arg, 0 or 1
 }
 
 void motor_turn_spot(int turn_dir){
-  motor_data_scope[0] = 0;
-  motor_data_scope[1] = 1; // forward, always forward
-  motor_data_scope[2] = MOTOR_AUTO_TURN;
-  motor_data_scope[3] = turn_dir; // passed as arg, 0 or 1
+  motor_data[0] = 0;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[3] = turn_dir; // passed as arg, 0 or 1
 }
 
 void motor_turn_modifier(int turn_dir) { 
   int temp_value;
-  if (motor_data_scope[3]) {
-    temp_value = 250 + motor_data_scope[2];
+  if (motor_data[3]) {
+    temp_value = 250 + motor_data[2];
   }
   else {
-    temp_value = 250 - motor_data_scope[2];
+    temp_value = 250 - motor_data[2];
   }
   temp_value += 100 * (-1 + turn_dir * 2);
 
   if ( temp_value > 250) { 
-    motor_data_scope[2] = temp_value - 250;
-    motor_data_scope[3] = 1;
+    motor_data[2] = temp_value - 250;
+    motor_data[3] = 1;
   } else {
-    motor_data_scope[2] = 250 - temp_value;
-    motor_data_scope[3] = 0;
+    motor_data[2] = 250 - temp_value;
+    motor_data[3] = 0;
   }
-  if (motor_data_scope[2] > 250) {
-    motor_data_scope[2] = 250;
-  } else if (motor_data_scope[2] < 0) {
-    motor_data_scope[2] = 0;
+  if (motor_data[2] > 250) {
+    motor_data[2] = 250;
+  } else if (motor_data[2] < 0) {
+    motor_data[2] = 0;
   }
 }
