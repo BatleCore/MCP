@@ -37,14 +37,14 @@ int centre_BOT;
 int centre_TOP;
 int hyst_range;
 int true_range;
-uint8_t servo_data[2] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
+// uint8_t servo_data[2] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
 
 //functions
 void servo_init();
 void servo_set_pos(uint16_t pos);
 void servo_callibration(void);
 void gripper_toggle();
-void servo_fromSerial(uint8_t* servo_data);
+void servo_fromSerial(uint8_t* data_fromSerial);
 void servo_read_joystick();
 void getServoControl(uint8_t* data_toSerial);
 

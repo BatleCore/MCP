@@ -43,10 +43,6 @@ int main(void) {
  
   uint8_t dataRX[PACKETSIZE]; // move to Robot.h?
 
-  uint8_t servo_d[2]; // to be made obsolete in servo.h
-  servo_d[0] = 0;
-  servo_d[1] = 0;
-
   char msg[30]; // for debugging
   
   while (1) {

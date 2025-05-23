@@ -36,5 +36,8 @@ int current_mode = MANUAL_MODE;
 
 //functions
 void setup();
+int main(void);
+void serial_forAuto();
+void serial_forManual();
 
 #endif

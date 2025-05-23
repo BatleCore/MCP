@@ -3,6 +3,9 @@
 static uint8_t velocity = 0;
 static uint8_t direction = 0;
 
+uint8_t servo_data[2] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
+
+
 void servo_init() {
   // set motor output pins
 
