@@ -11,7 +11,8 @@
 			"robot.h": "c",
 			"delay.h": "c",
 			"motor_control.h": "c",
-			"controller_display.h": "c"
+			"controller_display.h": "c",
+			"communication.h": "c"
 		}
 	}
 }

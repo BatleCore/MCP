@@ -22,6 +22,10 @@
 #define SPEED_INVERT 1
 #define TURN_INVERT 1
 
+#define MOTOR_MAX 250
+#define MOTOR_AUTO_SPEED 250
+#define MOTOR_AUTO_TURN 250
+
 // CLOCK COMPLARE FOR PWMs
 #define DUTY_LEFT OCR1A
 #define DUTY_RIGHT OCR1B
@@ -33,18 +37,27 @@
 #define DDR_CONTROL DDRA
 
 //functions
-void motor_data_conversion(uint8_t* results);
+void motor_data_conversion(uint8_t* results); // to be removed. broken into: rs_motor_conversion, cs_motor_conversion
 void motor_init();
-void differential_PWM_v3(uint8_t* motor_data);
+void differential_PWM_v3(uint8_t* motor_data); // to be cleaned / renamed
 void motor_test();
-void timerPWM_init();
-void rs_motor_conversion(uint8_t* input_data);
+void timerPWM_init(); // not used? double check
+void rs_motor_conversion();
 void cs_motor_conversion(uint8_t* results);
+void motor_fromSerial(uint8_t* motor_serial);
+void motor_stop();
+void motor_straight_forward();
+void motor_left_forward();
+void motor_right_forward();
+void motor_turn_forward(int turn_dir);
+void motor_turn_spot(int turn_dir);
+void motor_turn_modifier(int turn_dir);
 
 //scope-global variables
 int centre_BOT;
 int centre_TOP;
 int hyst_range;
 int true_range;
+// uint8_t motor_data_scope[4] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
 
 #endif

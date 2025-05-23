@@ -1,5 +1,4 @@
 //BATTERY VOLTAGE MONITORING
-
 #include "battery.h"
 
 void battery_init() {
@@ -24,14 +23,14 @@ void monitorBattery() {
   }
 }
 
+// Returns ADC converted to voltage (0-8.4V)
 uint8_t getVoltage() {
   return (bat_val * 84) / 1023;
 }
 
+// Debugging Function - Prints raw ADC values
 void testBattery() {
-  // Monitor the battery
   bat_val = adc_read(PIN_BATTERY_SENSE);
-  // Send to PC serial for debugging
   char msg[20];
   sprintf(msg, "%d\n", bat_val);            
   serial0_print_string(msg);

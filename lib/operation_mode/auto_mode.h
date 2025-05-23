@@ -11,16 +11,13 @@
 #include "PIN_ASSIGNMENT.h"
 #include "dist_sensor.h"
 #include "motor_control.h"
+#include "servo_control.h"
 
 //constants
 
 
 
 //functions
-void mode_1();
-void mode_2();
-void mode_3();
-void mode_4();
 void mode_5();
 void motor_stop();
 void motor_straight_forward();

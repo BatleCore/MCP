@@ -1,5 +1,5 @@
-#ifndef CONTROLLER_H_ //double inclusion guard
-#define CONTROLLER_H_
+#ifndef MANUAL_MODE_H_ //double inclusion guard
+#define MANUAL_MODE_H_
 
 //include standard libraries
 #include <avr/io.h>
@@ -16,28 +16,10 @@
 
 //include custom header files
 #include "PIN_ASSIGNMENT.h"
-
-#include "battery.h"
 #include "communication.h"
-#include "controller_display.h"
-#include "light_sensor.h"
 #include "motor_control.h"
 #include "servo_control.h"
 
-//constants
-#define BUILD_DATE __TIME__ " " __DATE__"\n"
-#define AUTO_MODE 0
-#define MANUAL_MODE 1
-
-//variables - scope/global
-uint8_t dataRX[PACKETSIZE] = {0};
-int current_mode = MANUAL_MODE;
-
-
 //functions
-void setup();
-int main(void);
-void serial_forAuto();
-void serial_forManual();
 
 #endif

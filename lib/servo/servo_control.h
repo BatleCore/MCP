@@ -30,14 +30,22 @@
 #define SERVO_PULSE_RANGE 1740
 #define SERVO_PULSE_OPEN 1860
 #define SERVO_PULSE_CLOSE 1440
+#define HYST 0.1
+
+//scope-global variables
+int centre_BOT;
+int centre_TOP;
+int hyst_range;
+int true_range;
+// uint8_t servo_data[2] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
 
 //functions
 void servo_init();
 void servo_set_pos(uint16_t pos);
 void servo_callibration(void);
 void gripper_toggle();
-void servo_set_velocity(uint8_t* servo_data);
-void servo_read_joystick(uint8_t* servo_data);
-uint8_t getServoControl();
+void servo_fromSerial(uint8_t* data_fromSerial);
+void servo_read_joystick();
+void getServoControl(uint8_t* data_toSerial);
 
 #endif
