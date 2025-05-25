@@ -14,7 +14,7 @@ volatile uint16_t freqLeft = 0;
 volatile uint16_t freqRight = 0;
 volatile uint16_t baselineLeft = 0;
 volatile uint16_t baselineRight = 0;
-volatile uint16_t signal_max[2] = {0};
+volatile int16_t signal_max[2] = {0};
 
 uint16_t turn = 0;
 uint16_t speed = 0;
@@ -91,6 +91,8 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
 
     uint32_t now = milliseconds_now();
     if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
+        sprintf(msg, "\n%s hard max : %d", channel ? "right" : "left", signal);
+        serial0_print_string(msg);
         signal_max[channel] = signal;
         last_state[channel] = true;
         uint32_t dt = now - last_time[channel];
@@ -102,6 +104,8 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
         }
     } else {
         if ( signal_max[channel] < signal ) {
+            sprintf(msg, "\n%s soft max : %d", channel ? "right" : "left", signal);
+            serial0_print_string(msg);
             signal_max[channel] = signal;
         } 
         if ( signal < SIGNAL_LOW_THRESHOLD ) {
@@ -195,39 +199,41 @@ void seekBeacon() {
     //   serial0_print_string(msg);
     // }
   
-    sprintf(msg, "\nLmax: %d - %d\nRmax: %d - %d", signal_max[0], signalLeft, signal_max[1], signalRight);
-    serial0_print_string(msg);
+    // sprintf(msg, "\nLmax: %d - %d\nRmax: %d - %d", signal_max[0], signalLeft, signal_max[1], signalRight);
+    // serial0_print_string(msg);
 
     static float left_compensation = 1;
-    static float right_compensation = 1;
+    static float right_compensation = 1.4;
 
     int leftVal = signal_max[0] * left_compensation;
     int rightVal = signal_max[1] * right_compensation;
     static uint16_t distance_values[3] = {0};
-    // get_distances(distance_values);
+    get_distances(distance_values);
 
-    if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
+    // if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
+    if ( distance_values[1] > FRONT_HARD_LIM){
+        // if ( leftVal > 10)
         if ( leftVal > rightVal * 1.1 ) {
             // go left
-            serial0_print_string("\nleft");
-            // motor_hardturn_forward(0);
+            // serial0_print_string("\nleft");
+            motor_softturn_forward(0);
         } else if ( rightVal > leftVal * 1.1 ) {
             // go right
-            serial0_print_string("\nright");
-            // motor_hardturn_forward(1);
+            // serial0_print_string("\nright");
+            motor_softturn_forward(1);
         } else {
             // go straight
-            serial0_print_string("\nstraight");
-            // motor_straight_forward();
+            // serial0_print_string("\nstraight");
+            motor_straight_forward();
         }
     } else {
-        serial0_print_string("\nstopped");
-        // motor_stop();
+        // serial0_print_string("\nstopped");
+        motor_stop();
     }
 
     // Execute motor instruction
     
-    // rs_motor_conversion();
+    rs_motor_conversion();
 }
 
 /*************************************************
