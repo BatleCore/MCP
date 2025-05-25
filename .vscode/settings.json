@@ -2,6 +2,10 @@
     "files.associations": {
         "serial.h": "c",
         "milliseconds.h": "c",
-        "servo_control.h": "c"
+        "servo_control.h": "c",
+        "adc.h": "c",
+        "pin_assignment.h": "c",
+        "stdio.h": "c",
+        "stdbool.h": "c"
     }
 }
