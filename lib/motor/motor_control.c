@@ -187,19 +187,19 @@ void differential_PWM_v3(uint8_t* motor_data){
   uint16_t right_duty = (motor_data[2]) ? 1750 + (motor_data[2]) : 0;
   uint8_t right_dir = motor_data[3];
 
-  // sprintf(msg, "\nL: %d\t%d\n", left_dir, left_duty);
-  // serial0_print_string(msg);
-  // sprintf(msg, "R: %d\t%d\n", right_dir, right_duty);
-  // serial0_print_string(msg);
+  sprintf(msg, "\nL: %d\t%d", left_dir, left_duty);
+  serial0_print_string(msg);
+  sprintf(msg, "\nR: %d\t%d", right_dir, right_duty);
+  serial0_print_string(msg);
   // sprintf(msg, "L: %u  \t %u \n", left_duty, right_duty);
   // serial0_print_string(msg);
   
   if (left_duty == 0) { // locked LOW
-    OCR1A = 2000; // 100% high, continuous break
+    PWM_LEFT = 2000; // 100% high, continuous break
     PORT_CONTROL &= ~(1 << PIN_ML_R); // LOW
     PORT_CONTROL &= ~(1 << PIN_ML_F); // LOW
   } else {
-    OCR1A = left_duty;
+    PWM_LEFT = left_duty;
     if ( left_dir ) { // FORWARD
       PORT_CONTROL &= ~(1 << PIN_ML_R);
       PORT_CONTROL |= (1 << PIN_ML_F);
@@ -210,11 +210,11 @@ void differential_PWM_v3(uint8_t* motor_data){
   }
 
   if (right_duty == 0) { // locked LOW
-    OCR1B = 2000; // 100% high, continuous break
+    PWM_RIGHT = 2000; // 100% high, continuous break
     PORT_CONTROL &= ~(1 << PIN_MR_R); // LOW
     PORT_CONTROL &= ~(1 << PIN_MR_F); // LOW
   } else {
-    OCR1B = right_duty;
+    PWM_RIGHT = right_duty;
     if ( right_dir ) { // FORWARD
       PORT_CONTROL &= ~(1 << PIN_MR_R);
       PORT_CONTROL |= (1 << PIN_MR_F);
@@ -318,12 +318,12 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
   if (fast_side > 500)
   {
     fast_side = 500;
-    slow_side = 500 - 2 * motor_data[2] * TURNING_CAP;
+    slow_side = 500 - 1 * motor_data[2] * TURNING_CAP;
   }
   else if (slow_side < 0)
   {
     slow_side = 0;
-    fast_side = 2 * motor_data[2] * TURNING_CAP;
+    fast_side = 1 * motor_data[2] * TURNING_CAP;
   }
 
   // sprintf(msg, "clamped\nfastside: %d\nslowside: %d\n", fast_side, slow_side);
@@ -341,7 +341,7 @@ void rs_motor_conversion() { // this input is essentially motor_data_scope
 
   // XOR
   // if ( motor_data[3] == motor_data[1]) { 
-  if ( motor_data[3] ) { 
+  if ( !motor_data[3] ) { 
     // Left side slower
     results[0] = ss_speed_p * 250;
     results[1] = ss_turn_d;
@@ -430,6 +430,7 @@ void motor_fromSerial(uint8_t* motor_serial) {
 // motor_data macros
 
 void motor_stop(){
+  
   motor_data[0] = 0;
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = 0; // straight
@@ -446,21 +447,21 @@ void motor_straight_forward(){
 void motor_left_forward(){
   motor_data[0] = MOTOR_AUTO_SPEED;
   motor_data[1] = 1; // forward, always forward
-  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[2] = 245;
   motor_data[3] = 0; // left
 }
 
 void motor_right_forward(){
   motor_data[0] = MOTOR_AUTO_SPEED;
   motor_data[1] = 1; // forward, always forward
-  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[2] = 245;
   motor_data[3] = 1; // right
 }
 
 void motor_turn_forward(int turn_dir){
   motor_data[0] = MOTOR_AUTO_SPEED;
   motor_data[1] = 1; // forward, always forward
-  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[2] = 245;
   motor_data[3] = turn_dir; // passed as arg, 0 or 1
 }
 
@@ -469,6 +470,13 @@ void motor_turn_spot(int turn_dir){
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = MOTOR_AUTO_TURN;
   motor_data[3] = turn_dir; // passed as arg, 0 or 1
+}
+
+void motor_direct_set(int sp_mag, int sp_dir, int turn_mag, int turn_dir) {
+  motor_data[0] = sp_mag;
+  motor_data[1] = sp_dir;
+  motor_data[2] = turn_mag;
+  motor_data[3] = turn_dir;
 }
 
 void motor_turn_modifier(int turn_dir) { 

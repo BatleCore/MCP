@@ -18,8 +18,11 @@
 //functions
 void auto_init();
 void mode_5();
+void mode_6();
+void mode_7();
+void mode_test();
 void auto_loop();
-int turn_bias_manager(uint8_t left_dist, uint8_t right_dist);
+int turn_bias_manager(uint16_t left_dist, uint16_t right_dist);
 
 
 #endif

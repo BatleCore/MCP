@@ -21,7 +21,7 @@
 #define TURNING_CAP 1 // 1 is good for auto, manual steering isnt so smooth though
 
 #define SPEED_INVERT 0
-#define TURN_INVERT 0
+#define TURN_INVERT 1
 
 #define MOTOR_MAX 250
 #define MOTOR_AUTO_SPEED 250
@@ -53,6 +53,7 @@ void motor_left_forward();
 void motor_right_forward();
 void motor_turn_forward(int turn_dir);
 void motor_turn_spot(int turn_dir);
+void motor_direct_set(int sp_mag, int sp_dir, int turn_mag, int turn_dir);
 void motor_turn_modifier(int turn_dir);
 
 //scope-global variables
