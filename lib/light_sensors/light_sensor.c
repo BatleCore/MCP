@@ -89,7 +89,7 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
 
     uint32_t now = milliseconds_now();
     if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
-        last_state[channel] = true; 
+        last_state[channel] = true;
         uint32_t dt = now - last_time[channel];
         last_time[channel] = now;
         if (dt > 47) {
@@ -180,9 +180,9 @@ void seekBeacon() {
 
     if (isr_counter>=20){ // for debugging
       isr_counter = 0;
-      sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%dHz", leftLDR, baselineLeft, signalLeft, freqLeft/10, freqLeft%10);
+      sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%02dHz", leftLDR, baselineLeft, signalLeft, freqLeft/100, freqLeft%100);
       serial0_print_string(msg);
-      sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%dHz", rightLDR, baselineRight, signalRight, freqRight/10, freqRight%10);
+      sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%02dHz", rightLDR, baselineRight, signalRight, freqRight/100, freqRight%100);
       serial0_print_string(msg);
     }
 
