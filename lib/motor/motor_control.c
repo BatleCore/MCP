@@ -430,7 +430,7 @@ void motor_fromSerial(uint8_t* motor_serial) {
 // motor_data macros
 
 void motor_stop(){
-  
+  // no motion
   motor_data[0] = 0;
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = 0; // straight
@@ -438,27 +438,15 @@ void motor_stop(){
 }
 
 void motor_straight_forward(){
+  // full speed straight
   motor_data[0] = MOTOR_AUTO_SPEED;
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = 0; // straight
   motor_data[3] = 0; // left  (not significant)
 }
 
-void motor_left_forward(){
-  motor_data[0] = MOTOR_AUTO_SPEED;
-  motor_data[1] = 1; // forward, always forward
-  motor_data[2] = 245;
-  motor_data[3] = 0; // left
-}
-
-void motor_right_forward(){
-  motor_data[0] = MOTOR_AUTO_SPEED;
-  motor_data[1] = 1; // forward, always forward
-  motor_data[2] = 245;
-  motor_data[3] = 1; // right
-}
-
-void motor_turn_forward(int turn_dir){
+void motor_softturn_forward(int turn_dir){
+  // full speed soft turn
   motor_data[0] = MOTOR_AUTO_SPEED;
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = 245;
@@ -466,11 +454,21 @@ void motor_turn_forward(int turn_dir){
 }
 
 void motor_turn_spot(int turn_dir){
+  // no speed hard turn
   motor_data[0] = 0;
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = MOTOR_AUTO_TURN;
   motor_data[3] = turn_dir; // passed as arg, 0 or 1
 }
+
+void motor_hardturn_forward(int turn_dir){
+  // full speed hard turn
+  motor_data[0] = 250;
+  motor_data[1] = 1; // forward, always forward
+  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[3] = turn_dir; // passed as arg, 0 or 1
+}
+
 
 void motor_direct_set(int sp_mag, int sp_dir, int turn_mag, int turn_dir) {
   motor_data[0] = sp_mag;

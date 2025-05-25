@@ -30,7 +30,7 @@
 #define SERVO_PULSE_RANGE 1740
 #define SERVO_PULSE_OPEN 1860
 #define SERVO_PULSE_CLOSE 1440
-#define HYST 0.1
+#define HYST 0.05
 
 //scope-global variables
 int centre_BOT;

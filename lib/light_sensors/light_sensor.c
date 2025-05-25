@@ -14,6 +14,8 @@ volatile uint16_t freqLeft = 0;
 volatile uint16_t freqRight = 0;
 volatile uint16_t baselineLeft = 0;
 volatile uint16_t baselineRight = 0;
+volatile uint16_t signal_max[2] = {0};
+
 uint16_t turn = 0;
 uint16_t speed = 0;
 
@@ -89,6 +91,7 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
 
     uint32_t now = milliseconds_now();
     if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
+        signal_max[channel] = signal;
         last_state[channel] = true;
         uint32_t dt = now - last_time[channel];
         last_time[channel] = now;
@@ -97,15 +100,22 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
             edge_counter[channel] = 0;
             last_freq[channel] = (200000UL) / dt;
         }
-    } else if ( signal < SIGNAL_LOW_THRESHOLD ) {
-      last_state[channel] = false;
-    }
+    } else {
+        if ( signal_max[channel] < signal ) {
+            signal_max[channel] = signal;
+        } 
+        if ( signal < SIGNAL_LOW_THRESHOLD ) {
+            last_state[channel] = false;
+        }
+      }
     edge_counter[channel]++;
     if (edge_counter[channel] > 400 && !new_edge[channel]) {
         last_freq[channel] = 0;
     }
     new_edge[channel] = false;
     last_signal[channel] = signal;
+
+
 
     return last_freq[channel];
 }
@@ -176,43 +186,44 @@ Inputs: left and right LDR values
 Outputs: None
 *************************************************/
 void seekBeacon() {
-    uint8_t motor_data[4]; // obsolete - not controlled with motor macros
+  
+    // if (isr_counter>=20){ // for debugging
+    //   isr_counter = 0;
+    //   sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%02dHz", leftLDR, baselineLeft, signalLeft, freqLeft/100, freqLeft%100);
+    //   serial0_print_string(msg);
+    //   sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%02dHz", rightLDR, baselineRight, signalRight, freqRight/100, freqRight%100);
+    //   serial0_print_string(msg);
+    // }
+  
+    sprintf(msg, "\nLmax: %d - %d\nRmax: %d - %d", signal_max[0], signalLeft, signal_max[1], signalRight);
+    serial0_print_string(msg);
 
-    if (isr_counter>=20){ // for debugging
-      isr_counter = 0;
-      sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%02dHz", leftLDR, baselineLeft, signalLeft, freqLeft/100, freqLeft%100);
-      serial0_print_string(msg);
-      sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%02dHz", rightLDR, baselineRight, signalRight, freqRight/100, freqRight%100);
-      serial0_print_string(msg);
-    }
+    static float left_compensation = 1;
+    static float right_compensation = 1;
 
-    
-    uint16_t total_magnitude = leftLDR + rightLDR;
-    uint16_t total_signal = signalLeft + signalRight;
+    int leftVal = signal_max[0] * left_compensation;
+    int rightVal = signal_max[1] * right_compensation;
+    static uint16_t distance_values[3] = {0};
+    // get_distances(distance_values);
 
-    // calculate turn and speed
-    if (total_magnitude == 0) { // Prevent divide-by-zero just in case
-        turn = 0;
-        speed = 0;
-    } else if (signalLeft < signalRight) {
-        // More light on the Right -> turn Right
-        motor_data[3] = 1; // turn right
-        motor_data[1] = 1; // forwards
-        // serial0_print_string("\nRight");
-        turn = 250 * signalLeft / total_signal;
-        speed = 250 - (250 * rightLDR / 1023);
+    if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
+        if ( leftVal > rightVal * 1.1 ) {
+            // go left
+            serial0_print_string("\nleft");
+            // motor_hardturn_forward(0);
+        } else if ( rightVal > leftVal * 1.1 ) {
+            // go right
+            serial0_print_string("\nright");
+            // motor_hardturn_forward(1);
+        } else {
+            // go straight
+            serial0_print_string("\nstraight");
+            // motor_straight_forward();
+        }
     } else {
-        // More light on the RIGHT -> turn LEFT
-        // serial0_print_string("\nLeft");
-        motor_data[3] = 0; // turn left
-        motor_data[1] = 1; // forwards
-
-        turn = 250 * signalRight / total_magnitude;
-        speed = 250 - (250 * leftLDR / 1023);
+        serial0_print_string("\nstopped");
+        // motor_stop();
     }
-
-    motor_data[2] = turn;
-    motor_data[0] = speed;
 
     // Execute motor instruction
     

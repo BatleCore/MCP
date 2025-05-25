@@ -15,7 +15,8 @@
 			"communication.h": "c",
 			"controller.h": "c",
 			"battery.h": "c",
-			"auto_mode.h": "c"
+			"auto_mode.h": "c",
+			"servo_control.h": "c"
 		}
 	}
 }
