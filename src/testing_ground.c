@@ -4,6 +4,7 @@
 #include "communication.h"
 #include "controller_display.h"
 #include "servo_control.h"
+#include "manual_mode.h"
 
 int main(void) {
     cli();  // Disable global interrupts
