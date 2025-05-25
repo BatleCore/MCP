@@ -4,6 +4,7 @@
 === Variable Initialisations ===
 *************************************************/
 volatile uint32_t isr_counter = 0;
+char msg[40];
 
 volatile uint16_t leftLDR = 0;
 volatile uint16_t rightLDR = 0;
@@ -48,14 +49,17 @@ Outputs: uint16 signal
 *************************************************/
 int16_t getSignal(uint16_t LDRval, uint8_t channel) {
 
-  static uint16_t baseline[2] = {0};                          // Array storing left[0] and right [1] baseline light levels
-  baseline[channel] = (baseline[channel] * 99UL + LDRval) / 100;  // Update baseline using exponential moving average
-  return (int16_t)LDRval - (int16_t)baseline[channel];        // Return signed deviation from baseline
+  return (LDRval - (channel ? baselineRight : baselineLeft));
+
+  // static uint16_t baseline[2] = {0};                          // Array storing left[0] and right [1] baseline light levels
+  // baseline[channel] = (baseline[channel] * 99UL + LDRval) / 100;  // Update baseline using exponential moving average
+  // return (int16_t)LDRval - (int16_t)baseline[channel];        // Return signed deviation from baseline
 }
 
 int16_t getBaseline(uint16_t LDRval, uint8_t channel) {
   static uint16_t baseline[2] = {0};                          // Array storing left[0] and right [1] baseline light levels
-  baseline[channel] = (baseline[channel] * 99UL + LDRval) / 100;  // Update baseline using exponential moving average
+  baseline[channel] = ((baseline[channel] * 99UL + LDRval) / 100);  // Update baseline using exponential moving average
+  baseline[channel] += (LDRval > baseline[channel])? 1 : -1; // compensate for integer rounding. ensures value doesnt stall on a rounding-down loop
   return baseline[channel]; 
 }
 
@@ -81,9 +85,11 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
     static uint16_t last_freq[2]      = {0};
     static bool     new_edge[2]       = {0};
     static uint16_t edge_counter[2]   = {0};
+    static bool     last_state[2]     = {false}; // false for low, true for high
 
     uint32_t now = milliseconds_now();
-    if (last_signal[channel] < 0 && signal >= 0 && signal > SIGNAL_THRESHOLD) {
+    if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
+        last_state[channel] = true; 
         uint32_t dt = now - last_time[channel];
         last_time[channel] = now;
         if (dt > 47) {
@@ -91,6 +97,8 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
             edge_counter[channel] = 0;
             last_freq[channel] = (200000UL) / dt;
         }
+    } else if ( signal < SIGNAL_LOW_THRESHOLD ) {
+      last_state[channel] = false;
     }
     edge_counter[channel]++;
     if (edge_counter[channel] > 400 && !new_edge[channel]) {
@@ -145,6 +153,13 @@ ISR(TIMER4_COMPA_vect) {
     // Calculate potential beacon frequency
     freqLeft = getFrequency(signalLeft, 0);
     freqRight = getFrequency(signalRight, 1);
+    if (isr_counter > 400) {
+      isr_counter = 0;
+    }
+    // sprintf(msg, "\n(%lu, %d)", isr_counter, signalLeft);
+    // serial0_print_string(msg);
+    // sprintf(msg, "(\n%lu, %d)", isr_counter, signalRight);
+    // serial0_print_string(msg);
 }
 
 /*************************************************
@@ -160,29 +175,39 @@ ISR(TIMER4_COMPA_vect) {
 Inputs: left and right LDR values
 Outputs: None
 *************************************************/
-void seekBeacon(uint16_t leftLDR, uint16_t rightLDR, uint16_t leftSignal, uint16_t rightSignal) {
-    uint8_t motor_data[4];
+void seekBeacon() {
+    uint8_t motor_data[4]; // obsolete - not controlled with motor macros
+
+    if (isr_counter>=20){ // for debugging
+      isr_counter = 0;
+      sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%dHz", leftLDR, baselineLeft, signalLeft, freqLeft/10, freqLeft%10);
+      serial0_print_string(msg);
+      sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%dHz", rightLDR, baselineRight, signalRight, freqRight/10, freqRight%10);
+      serial0_print_string(msg);
+    }
+
     
     uint16_t total_magnitude = leftLDR + rightLDR;
-    uint16_t total_signal = leftSignal + rightSignal;
+    uint16_t total_signal = signalLeft + signalRight;
 
     // calculate turn and speed
     if (total_magnitude == 0) { // Prevent divide-by-zero just in case
         turn = 0;
         speed = 0;
-    } else if (leftSignal< rightSignal) {
+    } else if (signalLeft < signalRight) {
         // More light on the Right -> turn Right
         motor_data[3] = 1; // turn right
         motor_data[1] = 1; // forwards
-
-        turn = 250 * leftSignal / total_signal;
+        // serial0_print_string("\nRight");
+        turn = 250 * signalLeft / total_signal;
         speed = 250 - (250 * rightLDR / 1023);
     } else {
         // More light on the RIGHT -> turn LEFT
+        // serial0_print_string("\nLeft");
         motor_data[3] = 0; // turn left
         motor_data[1] = 1; // forwards
 
-        turn = 250 * rightSignal / total_magnitude;
+        turn = 250 * signalRight / total_magnitude;
         speed = 250 - (250 * leftLDR / 1023);
     }
 
@@ -191,7 +216,7 @@ void seekBeacon(uint16_t leftLDR, uint16_t rightLDR, uint16_t leftSignal, uint16
 
     // Execute motor instruction
     
-    rs_motor_conversion(motor_data);
+    // rs_motor_conversion();
 }
 
 /*************************************************

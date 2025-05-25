@@ -12,6 +12,8 @@
 #include "dist_sensor.h"
 #include "motor_control.h"
 #include "servo_control.h"
+#include "light_sensor.h"
+#include "communication.h" // probably wont stay here
 
 //constants
 
