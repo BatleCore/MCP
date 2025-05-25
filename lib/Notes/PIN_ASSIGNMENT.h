@@ -25,6 +25,9 @@
 #define PIN_MR_R PA3 // D25 → Right motor reverse
 #define PIN_BATTERY_LED PA4   // Indicator LED digital output
 
+#define PWM_LEFT OCR1B
+#define PWM_RIGHT OCR1A
+
 
 // OUTPUTS - PWM
 #define PIN_PWM_ML PB5 // D11 - OC1A

@@ -22,7 +22,7 @@
 #define FLASH_TIME 25
 
 // === Global Variables ===
-uint16_t bat_val;             // stores battery voltage reading
+uint8_t bat_val;             // stores battery voltage reading
 bool bat_low;
 
 // === Functions ===
