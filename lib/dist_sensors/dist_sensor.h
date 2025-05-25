@@ -16,6 +16,10 @@
 #define DIST_SENSOR_MAX_ERR 9999 // over range
 #define DIST_SENSOR_MIN_ERR 0 // under range
 
+#define FRONT_HARD_LIM 120
+#define FRONT_SOFT_LIM 225
+#define SIDE_HARD_LIM 120
+
 // === Global Variables ===
 
 // === Functions ===

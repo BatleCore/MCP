@@ -18,7 +18,7 @@
 #include "PIN_ASSIGNMENT.h"
 #include "motor_control.h"
 #include "dist_sensor.h"
-#include "auto_mode.h"
+// #include "auto_mode.h"
 
 // === Constants and Configuration ===
 #define BEACON2_FREQ 2000       // 20.00 Hz (in hundredths of Hz)

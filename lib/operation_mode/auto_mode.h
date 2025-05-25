@@ -16,9 +16,6 @@
 #include "communication.h" // probably wont stay here
 
 //constants
-#define FRONT_HARD_LIM 120
-#define FRONT_SOFT_LIM 225
-#define SIDE_HARD_LIM 120
 
 //functions
 void auto_init();

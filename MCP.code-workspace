@@ -16,7 +16,9 @@
 			"controller.h": "c",
 			"battery.h": "c",
 			"auto_mode.h": "c",
-			"servo_control.h": "c"
+			"servo_control.h": "c",
+			"dist_sensor.h": "c",
+			"light_sensor.h": "c"
 		}
 	}
 }
