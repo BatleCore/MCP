@@ -173,10 +173,24 @@ int turn_bias_manager(uint16_t left_dist, uint16_t right_dist) {
 
 void auto_loop() {
   // read beacon
+  // Get raw data
+  // uint16_t lightValues[2];
+  // uint16_t frequencies[2];
+  // getLightValues(lightValues);
+  // getFrequencies(frequencies);
+  // // Compress data to within 8 bit for sending
+  // uint8_t leftLDR = compressADC(lightValues[0]);
+  // uint8_t rightLDR = compressADC(lightValues[1]);
+  // uint8_t leftFreq = (frequencies[0] + 5) / 10; // Truncates least significant digit with nearest 10 rounding
+  // uint8_t rightFreq = (frequencies[1] + 5) / 10;
+  // sprintf(msg, "L val: %d - %dHz\nR val %d - %dHz\n", leftLDR, leftFreq, rightLDR, rightFreq);
+  // serial0_print_string(msg);
+  seekBeacon();
+
   if (0) {
     // follow beacon
   } else {
     // navigate with sensors
-    mode_7();
+    // mode_7();
   }
 }
