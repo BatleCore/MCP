@@ -68,7 +68,7 @@ int main(void) {
       lastSend = milliseconds_now();
       
       sendSwitchOperation();
-      requestBATTERYdata();
+      // requestBATTERYdata();
       // requestLIGHTdata();
       // requestRANGEdata();
       

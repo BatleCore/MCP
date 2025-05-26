@@ -38,9 +38,9 @@
 #define DDR_CONTROL DDRA
 
 //functions
-void motor_data_conversion(uint8_t* results); // to be removed. broken into: rs_motor_conversion, cs_motor_conversion
 void motor_init();
 void motor_init_params();
+void motor_data_conversion(uint8_t* results); // to be removed. broken into: rs_motor_conversion, cs_motor_conversion
 void differential_PWM_v3(uint8_t* motor_data); // to be cleaned / renamed
 void motor_test();
 void timerPWM_init(); // not used? double check
@@ -49,10 +49,9 @@ void cs_motor_conversion(uint8_t* results);
 void motor_fromSerial(uint8_t* motor_serial);
 void motor_stop();
 void motor_straight_forward();
-void motor_left_forward();
-void motor_right_forward();
-void motor_turn_forward(int turn_dir);
+void motor_softturn_forward(int turn_dir);
 void motor_turn_spot(int turn_dir);
+void motor_hardturn_forward(int turn_dir);
 void motor_direct_set(int sp_mag, int sp_dir, int turn_mag, int turn_dir);
 void motor_turn_modifier(int turn_dir);
 
