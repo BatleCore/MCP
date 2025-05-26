@@ -24,7 +24,7 @@
 #define BEACON2_FREQ 2000       // 20.00 Hz (in hundredths of Hz)
 #define FREQ_TOLERANCE    100   // ±5% tolerance (hundredths of Hz)
 #define PROXIMITY_THRESHOLD 900 // ADC value to trigger "close enough" detection
-#define SIGNAL_THRESHOLD 15     // Minimum signal to filter ambient false positives
+#define SIGNAL_THRESHOLD 30     // Minimum signal to filter ambient false positives
 #define SIGNAL_LOW_THRESHOLD 5
 
 // === Global Variables ===

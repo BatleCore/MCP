@@ -134,7 +134,7 @@ void mode_7() {
       motor_straight_forward();
     }
   }
-  rs_motor_conversion();
+  // rs_motor_conversion();
 }
 
 void mode_test() {

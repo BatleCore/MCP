@@ -162,6 +162,7 @@ Outputs: left/right LDR values
 ISR(TIMER4_COMPA_vect) {
     isr_counter++; // used for debugging (serial print every 10 ISRs to not overflood serial)
     // Get sensor values
+    // adc_read(0); // a nothing operation - seems to be needed to prime the adc
     leftLDR = adc_read(PIN_LDR_LEFT); // callibration.txt
     rightLDR = adc_read(PIN_LDR_RIGHT);
     // Check for signal against ambient light level
@@ -173,9 +174,6 @@ ISR(TIMER4_COMPA_vect) {
     // Calculate potential beacon frequency
     freqLeft = getFrequency(signalLeft, 0);
     freqRight = getFrequency(signalRight, 1);
-    if (isr_counter > 400) {
-      isr_counter = 0;
-    }
     // sprintf(msg, "\n(%lu, %d)", isr_counter, signalLeft);
     // serial0_print_string(msg);
     // sprintf(msg, "(\n%lu, %d)", isr_counter, signalRight);
@@ -209,14 +207,16 @@ void seekBeacon() {
 
     sprintf(msg, "\nL: %4d, R: %4d", freqLeft, freqRight);
     serial0_print_string(msg);
-    sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
-    serial0_print_string(msg);
-    sprintf(msg, "\nL: %3d, R: %3d", signal_max[0], signal_max[1]);
-    serial0_print_string(msg);
-    sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
-    serial0_print_string(msg);
+    // sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
+    // serial0_print_string(msg);
+    // sprintf(msg, "\nL: %3d, R: %3d", signal_max[0], signal_max[1]);
+    // serial0_print_string(msg);
+    // sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
+    // serial0_print_string(msg);
 
     get_distances(distance_values); // this is causing frequency errors?
+    sprintf(msg, "\nL: %d, C: %d, R: %d", distance_values[0], distance_values[1], distance_values[2]);
+    serial0_print_string(msg);
 
     if (prep_counter >= samples) {
         // seeking code
@@ -266,8 +266,8 @@ void seekBeacon() {
         prep_counter++;
     }
 
-    sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max[0], signalLeft, rightVal, signal_max[1], signalRight);
-    serial0_print_string(msg);
+    // sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max[0], signalLeft, rightVal, signal_max[1], signalRight);
+    // serial0_print_string(msg);
 
     // Execute motor instruction
     
