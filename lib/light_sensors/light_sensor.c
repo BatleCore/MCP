@@ -91,8 +91,8 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
 
     uint32_t now = milliseconds_now();
     if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
-        sprintf(msg, "\n%s hard max : %d", channel ? "right" : "left", signal);
-        serial0_print_string(msg);
+        // sprintf(msg, "\n%s hard max : %d", channel ? "right" : "left", signal);
+        // serial0_print_string(msg);
         signal_max[channel] = signal;
         last_state[channel] = true;
         uint32_t dt = now - last_time[channel];
@@ -102,22 +102,30 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
             edge_counter[channel] = 0;
             last_freq[channel] = (200000UL) / dt;
         }
-    } else {
-        if ( signal_max[channel] < signal ) {
-            sprintf(msg, "\n%s soft max : %d", channel ? "right" : "left", signal);
-            serial0_print_string(msg);
-            signal_max[channel] = signal;
-        } 
+    } else if (last_state[channel]) {
         if ( signal < SIGNAL_LOW_THRESHOLD ) {
             last_state[channel] = false;
         }
+        if ( signal_max[channel] < signal ) {
+            // sprintf(msg, "\n%s soft max : %d", channel ? "right" : "left", signal);
+            // serial0_print_string(msg);
+            signal_max[channel] = signal;
+        } 
       }
     edge_counter[channel]++;
     if (edge_counter[channel] > 400 && !new_edge[channel]) {
         last_freq[channel] = 0;
     }
     new_edge[channel] = false;
-    //last_signal[channel] = signal;
+    // last_signal[channel] = signal;
+
+    if ( !last_freq[channel] ) {
+        signal_max[channel] = 0;
+    } 
+    if ( signal_max[channel] > 1023 ) {
+        signal_max[channel] = 0;
+    }
+
 
     return last_freq[channel];
 }
@@ -154,7 +162,8 @@ Outputs: left/right LDR values
 ISR(TIMER4_COMPA_vect) {
     isr_counter++; // used for debugging (serial print every 10 ISRs to not overflood serial)
     // Get sensor values
-    leftLDR = adc_read(PIN_LDR_LEFT);
+    // adc_read(0); // a nothing operation - seems to be needed to prime the adc
+    leftLDR = adc_read(PIN_LDR_LEFT); // callibration.txt
     rightLDR = adc_read(PIN_LDR_RIGHT);
     // Check for signal against ambient light level
     baselineLeft = getBaseline(leftLDR, 0);
@@ -165,9 +174,6 @@ ISR(TIMER4_COMPA_vect) {
     // Calculate potential beacon frequency
     freqLeft = getFrequency(signalLeft, 0);
     freqRight = getFrequency(signalRight, 1);
-    if (isr_counter > 400) {
-      isr_counter = 0;
-    }
     // sprintf(msg, "\n(%lu, %d)", isr_counter, signalLeft);
     // serial0_print_string(msg);
     // sprintf(msg, "(\n%lu, %d)", isr_counter, signalRight);
@@ -188,50 +194,84 @@ Inputs: left and right LDR values
 Outputs: None
 *************************************************/
 void seekBeacon() {
-  
-    // if (isr_counter>=20){ // for debugging
-    //   isr_counter = 0;
-    //   sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%02dHz", leftLDR, baselineLeft, signalLeft, freqLeft/100, freqLeft%100);
-    //   serial0_print_string(msg);
-    //   sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%02dHz", rightLDR, baselineRight, signalRight, freqRight/100, freqRight%100);
-    //   serial0_print_string(msg);
-    // }
-  
-    // sprintf(msg, "\nLmax: %d - %d\nRmax: %d - %d", signal_max[0], signalLeft, signal_max[1], signalRight);
+        
+    static int prep_counter = 0;
+    static int leftVal = 0;
+    static int rightVal = 0;
+    static uint16_t distance_values[3] = {0};
+    static int samples = 1;
+    static float thresh = 1.2; // +- for going straight
+
+    // sprintf(msg, "\nseekBeacon : %d", prep_counter);
     // serial0_print_string(msg);
 
-    static float left_compensation = 1;
-    static float right_compensation = 1.4;
+    sprintf(msg, "\nL: %4d, R: %4d", freqLeft, freqRight);
+    serial0_print_string(msg);
+    // sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
+    // serial0_print_string(msg);
+    // sprintf(msg, "\nL: %3d, R: %3d", signal_max[0], signal_max[1]);
+    // serial0_print_string(msg);
+    // sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
+    // serial0_print_string(msg);
 
-    int leftVal = signal_max[0] * left_compensation;
-    int rightVal = signal_max[1] * right_compensation;
-    static uint16_t distance_values[3] = {0};
-    get_distances(distance_values);
+    get_distances(distance_values); // this is causing frequency errors?
+    sprintf(msg, "\nL: %d, C: %d, R: %d", distance_values[0], distance_values[1], distance_values[2]);
+    serial0_print_string(msg);
 
-    // if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
-    if ( distance_values[1] > FRONT_HARD_LIM){
-        // if ( leftVal > 10)
-        if ( leftVal > rightVal * 1.1 ) {
-            // go left
-            // serial0_print_string("\nleft");
-            motor_softturn_forward(0);
-        } else if ( rightVal > leftVal * 1.1 ) {
-            // go right
-            // serial0_print_string("\nright");
-            motor_softturn_forward(1);
-        } else {
-            // go straight
-            // serial0_print_string("\nstraight");
-            motor_straight_forward();
+    if (prep_counter >= samples) {
+        // seeking code
+        leftVal = (leftVal * (samples - 1) + signal_max[0])/samples;
+        rightVal = (rightVal * (samples - 1) + signal_max[1])/samples;
+
+
+        if (distance_values[1] > FRONT_HARD_LIM) { // no wall in front
+            if ( leftVal == 0 && rightVal == 0 ) { // no signals
+                sprintf(msg, "\nspot %s - no signals", (distance_values[0]<distance_values[2]) ? "right" : "left");
+                serial0_print_string(msg);
+                motor_turn_spot(distance_values[0]<distance_values[2]); // rotate away from closest wall
+            } else if ( leftVal == 0 || rightVal == 0 ) { // only one signal ( becomes XOR due to previous IF)
+                // one value exists, not both
+                // hard turn in that direction
+                sprintf(msg, "\nhard %s - missing signal", (rightVal > leftVal) ? "right" : "left");
+                serial0_print_string(msg);
+                motor_hardturn_forward(rightVal > leftVal); // if leftVal == 0 , turn right
+            } else { // both signals
+                if ( leftVal > rightVal * thresh ) { // left too strong
+                    // if left is much brighter
+                    // go left
+                    serial0_print_string("\nleft  - uneven signals");
+                    motor_softturn_forward(0);
+                } else if ( rightVal > leftVal * thresh ) { // right too strong
+                    // if right is much brighter
+                    // go right
+                    serial0_print_string("\nright - uneven signals");
+                    motor_softturn_forward(0);
+                } else { // left and right about the same
+                    // left and right are similar
+                serial0_print_string("\nstraight - even signals");
+                    motor_straight_forward();
+                }
+            }
+        } else { // front obstruction
+            serial0_print_string("\nstop - wall");
+            motor_stop();
         }
+    } else if (prep_counter == 0) {
+        leftVal = signal_max[0];
+        rightVal = signal_max[1];
+        prep_counter++;
     } else {
-        // serial0_print_string("\nstopped");
-        motor_stop();
+        leftVal = (leftVal * (samples - 1) + signal_max[0])/samples;
+        rightVal = (rightVal * (samples - 1) + signal_max[1])/samples;
+        prep_counter++;
     }
+
+    // sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max[0], signalLeft, rightVal, signal_max[1], signalRight);
+    // serial0_print_string(msg);
 
     // Execute motor instruction
     
-    rs_motor_conversion();
+    // rs_motor_conversion();
 }
 
 /*************************************************
@@ -254,4 +294,11 @@ void LDR_test() {
         serial0_print_string(msg);
         _delay_ms(250);
     }
+}
+void LDR_calibrate() {
+  static char msg[40];
+    leftLDR = 1 * adc_read(PIN_LDR_LEFT);
+    rightLDR = adc_read(PIN_LDR_RIGHT);
+    sprintf(msg, "(%d, m * %d + c )\n", rightLDR, leftLDR);
+    serial0_print_string(msg);
 }

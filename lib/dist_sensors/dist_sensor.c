@@ -10,13 +10,15 @@ void get_distances(uint16_t* distance_values) {
   uint16_t left_sum = 0;
   uint16_t cent_sum = 0;
   uint16_t right_sum = 0;
-  int samples = 50;
+  static int samples = 50;
 
   // take 10 measurements for each sensor
   for(int i=0; i<samples; i++) {
+    cli(); // to manage clash with interrupt using ADC
     left_sum = left_sum + adc_read(PIN_DISTANCE_LEFT);
     cent_sum = cent_sum + adc_read(PIN_DISTANCE_CENT);
     right_sum = right_sum + adc_read(PIN_DISTANCE_RIGHT);
+    sei();
     _delay_us(10);
   }
   

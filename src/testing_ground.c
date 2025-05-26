@@ -5,9 +5,10 @@
 // #include "controller_display.h" // light_sensor, auto_mode, manual_mode
 // #include "servo_control.h"
 #include "manual_mode.h"
+#include "dist_sensor.h"
 
 int main(void) {
-    int i = 6;
+    dist_sensor_test();
     return 0;
 }
 
