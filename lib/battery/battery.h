@@ -27,7 +27,7 @@ bool bat_low;
 
 // === Functions ===
 void battery_init();
+void monitorBattery();
 uint8_t getVoltage();
-void testBattery();
 
 #endif

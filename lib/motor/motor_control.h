@@ -60,6 +60,8 @@ int centre_BOT;
 int centre_TOP;
 int hyst_range;
 int true_range;
+
+extern uint8_t motor_data[4];
 // uint8_t motor_data_scope[4] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
 
 #endif

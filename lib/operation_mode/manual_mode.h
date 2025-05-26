@@ -20,6 +20,10 @@
 #include "motor_control.h"
 #include "servo_control.h"
 
+// global variables
+extern uint8_t current_mode;
+
 //functions
+void manual_loop();
 
 #endif

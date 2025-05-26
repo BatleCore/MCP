@@ -24,6 +24,7 @@
 #include "motor_control.h"
 #include "servo_control.h"
 #include "auto_mode.h"
+#include "manual_mode.h"
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
@@ -31,14 +32,10 @@
 #define MANUAL_MODE 1
 
 //variables - scope/global
-uint8_t dataRX[PACKETSIZE] = {0};
-int current_mode = AUTO_MODE;
-
 
 //functions
 void setup();
 int main(void);
 void serial_forAuto();
-void serial_forManual();
 
 #endif
