@@ -1,101 +1,75 @@
-
 // CONTROLLER
-// Lab 8 Controller Micro
 #include "Controller.h"
 
-
-// Joystick Analog Pins (forgot how this works on controller)
-/*
-Lx = A14 = PK6
-Ly = A15 = PK7
-Rx = A1 = PF1
-Ry = A0 = PF0
-*/
-
-// #define PORT_JOYLEFT PORTK
-// #define DDR_JOYLEFT DDRK
-// #define PORT_JOYRIGHT PORTF
-// #define DDR_JOYRIGHT DDRF
-
-// Communication Codes (matches the robot)
-// #define LDR_REQUEST  0xA0  // Request light sensor data from robot
-// #define JOYSTICK_MOTOR_READ  0xA1  // Send joystick X/Y to robot for motor control
-// #define JOYSTICK_SERVO_READ  0xA2  // Send joystick X/Y to robot for servo control
-// #define REQUEST_ERROR  0xEE  // Error / fallback code (not used here)
-
-// Convert 10-bit ADC (0–1023) to 8-bit value (0–255)
-uint8_t mapADC(uint16_t adc_val) {
-  /******************************
-    Not used
-    made redundant by "motor_data_conversion" 
-  ******************************/
-  return adc_val >> 2; // divide by 4
-}
+uint8_t robot_mode = MANUAL_MODE;
 
 // System setup
-// - Initializes communication (serial2 for Xbee)
-// - Initializes ADC and millisecond timing
-void setup() {
-  cli();           // Disable interrupts while setting up
-  serial2_init();      // XBee serial communication
-  serial0_init();      // Teminal Serial Monitor
-  milliseconds_init();   // For timing control
-  display_init();
-  motor_init_params();
+void controller_setup() {
+  cli();                // Disable interrupts while setting up
+  serial2_init();       // XBee serial communication
+  serial0_init();       // Terminal Serial Monitor
+  milliseconds_init();  // For timing control
+  display_init();       // Initialise LCD updates
+  motor_init_params();  // Initialise motors
+  _delay_ms(20);
+  adc_init();           // Enable analog inputs (for joysticks)
+  _delay_ms(20);
 
   // ADC PINS SET TO INPUT
-  DDR_JOYLEFT &= ~(1<<PIN_JOY_L_X);
-  DDR_JOYLEFT &= ~(1<<PIN_JOY_L_Y);
-  DDR_JOYRIGHT &= ~(1<<PIN_JOY_R_X);
-  DDR_JOYRIGHT &= ~(1<<PIN_JOY_R_X);
-  _delay_ms(20);
-  adc_init();        // Enable analog input (for joysticks)
-  _delay_ms(20);
+  DDRK &= ~(1<<PIN_JOY_L_X);
+  DDRK &= ~(1<<PIN_JOY_L_Y);
+  DDRF &= ~(1<<PIN_JOY_R_X);
+  DDRF &= ~(1<<PIN_JOY_R_X);
+  
+
+  // ISR for Left Joystick Button (Switching Operation Modes)
+  DDRD &= ~(1 << PIN_JOY_L_BUTTON);
+  PORTD |= (1 << PIN_JOY_L_BUTTON);
+  EIMSK |= (1 << INT1);             // Enable INT0
+  EICRA = (EICRA & ~(1 << ISC10))|(1 << ISC11);   // ISC01=1, ISC00=0 (falling edge)
   sei();           // Enable global interrupts
 }
  
 // Main control loop
 // Reads joystick values and sends them to the robot every 20ms
 int main(void) {
-  setup();  // Init everything
+  controller_setup();  // Init everything
 
-  uint32_t lastSend = 0;   // Last time a packet was sent
+  uint32_t last_LCD_update = 0;   // Last time LCD was updated
+  uint32_t last_control_update = 0;   // Last time control was sent to robot
 
   while (1) {
-    // Check if 20ms has passed since last send
-    // This limits packet rate to 50Hz (fast, but not overwhelming)
-    if (milliseconds_now() - lastSend >= 100) {
-      lastSend = milliseconds_now();
-      
-      sendSwitchOperation();
-      // requestBATTERYdata();
-      // requestLIGHTdata();
-      // requestRANGEdata();
-      
-      lcd_clrscr();
-      updateLCD();
+
+    // Update robot with controls every 50ms when in manual mode (20x/sec)
+    if ((robot_mode == MANUAL_MODE) && (milliseconds_now() - last_control_update >= CONTROL_RATE)) {
       sendMotorControl();
       sendServoControl();
+      last_control_update = milliseconds_now();
+    }
 
-
-      // Read left joystick (X = turn, Y = forward/backward)
-      // left_x_val = adc_read(PIN_JOYSTICKRIGHT_X);
-      // left_y_val = adc_read(PIN_JOYSTICKRIGHT_Y); 
-      // left_y_val = adc_read(PIN_JOYSTICKLEFT_Y); 
- 
-      // sprintf(msg, "\nNEW\nJoy X: %d\nJoy Y: %d\n", left_x_val, left_y_val);
-      // serial0_print_string(msg);
-      
-      // motor_data_conversion(motor_d);
-      
-      // Send joystick data as a 5-byte command packet:
-      // serial2_write_bytes(5, JOYSTICK_MOTOR_READ, motor_d[0], motor_d[1], motor_d[2], motor_d[3]);
-
-      
-      // servo_read_joystick(servo_d);
-      // serial2_write_bytes(3, JOYSTICK_SERVO_READ, servo_d[0], servo_d[1]);
-
+    // Update LCD contents every 250ms (4x/sec)
+    if (milliseconds_now() - last_LCD_update >= LCD_RATE) {
+      updateLCD();
+      last_LCD_update = milliseconds_now();
     }
   }
   return 0;
+}
+
+// ISR for screen switch button (right joystick)
+ISR(INT1_vect) {
+    
+    static uint32_t last_press = 0; // Software debouncing
+
+    if (milliseconds_now() - last_press > 250) {
+
+      last_press = milliseconds_now();  // Reset software debouncing
+
+      if (robot_mode == MANUAL_MODE) {
+        robot_mode = AUTO_MODE;  // Switch from manual to auto
+      } else {
+        robot_mode = MANUAL_MODE;  // Switch from auto to manual
+      }
+      sendSwitchOperation(robot_mode);
+    }
 }

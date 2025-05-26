@@ -72,16 +72,11 @@ void sendServoControl() {
 }
 
 // Controller
-void sendSwitchOperation() {
-    // uint8_t opMode = getOperationMode(); // placeholder until auto/ma logic  is defined
-    // serial2_write_bytes(2, MODE_SWITCH, opMode);
+void sendSwitchOperation(uint8_t opMode) {
+    serial2_write_bytes(2, MODE_SWITCH, opMode);
 }
 
-void sendConfirmSwitch() {
-    // uint8_t opMode = getRobotMode();
-    // serial2_write_bytes(2, MODE_SWITCH, opMode);
-}
-
+// compresses 10 bit to 0-250 for serial
 uint8_t compressADC(uint16_t adr_value) {
     return (uint8_t)((adr_value * 250UL) / 1023);
 }

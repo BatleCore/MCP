@@ -82,7 +82,7 @@ Outputs: uint16 frequency
 
 uint16_t getFrequency(int16_t signal, uint8_t channel) {
 
-    static int16_t  last_signal[2]    = {0};
+    //static int16_t  last_signal[2]    = {0}; not needed but scared to delete - mat
     static uint32_t last_time[2]      = {0};
     static uint16_t last_freq[2]      = {0};
     static bool     new_edge[2]       = {0};
@@ -117,9 +117,7 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
         last_freq[channel] = 0;
     }
     new_edge[channel] = false;
-    last_signal[channel] = signal;
-
-
+    //last_signal[channel] = signal;
 
     return last_freq[channel];
 }

@@ -1,7 +1,7 @@
 //BATTERY VOLTAGE MONITORING
 #include "battery.h"
 
-char msg[30];
+char msg[40];
 
 void battery_init() {
   adc_init();
@@ -28,8 +28,8 @@ void monitorBattery() {
 
 // Returns ADC converted to voltage (0-8.4V)
 uint8_t getVoltage() {
-  bat_val = (adc_read(PIN_BATTERY_SENSE) * 84UL) / 1023;
-  return bat_val;
+  uint8_t bat_voltage = (bat_val * 84UL) / 1023;
+  return bat_voltage;
 }
 
 // Debugging Function - Prints raw ADC values

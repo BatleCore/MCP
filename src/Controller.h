@@ -25,22 +25,23 @@
 
 //constants
 #define BUILD_DATE __TIME__ " " __DATE__"\n"
-#define PORT_JOYLEFT PORTK
-#define DDR_JOYLEFT DDRK
-#define PORT_JOYRIGHT PORTF
-#define DDR_JOYRIGHT DDRF
+
 #define AUTO_MODE 0
 #define MANUAL_MODE 1
+#define LCD_RATE 250 // 250ms 4hz
+#define CONTROL_RATE 20 // 20ms 50hz
+
+
 
 
 // custom functions:
-void print_to_lcd(char * msg1, int16_t val1, int16_t val2);
-void send_uart2_string(char* message);
-void USART2_init();
-void send_packet(uint8_t* data);
+void controller_setup();
+int main(void);
+
+
 
 //variables - scope/global
-int current_mode = AUTO_MODE;
+uint8_t robot_mode;
 
 
 #endif

@@ -6,6 +6,7 @@
         "adc.h": "c",
         "pin_assignment.h": "c",
         "stdio.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "controller_display.h": "c"
     }
 }

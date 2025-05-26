@@ -8,6 +8,7 @@ uint8_t dataRX[6];
 char buffer[20];
 
 void display_init() {
+    cli();
     lcd_init();
     DDRD &= ~(1 << PD0);
     PORTD |= (1 << PD0);
@@ -132,6 +133,8 @@ void updateRangeScreen() {
 
 void updateLCD() {
 
+    lcd_clrscr();
+
     switch(currentScreen) {
         case SCREEN_HOME:
             updateHomeScreen();
@@ -182,7 +185,7 @@ void test_LCD(ScreenState screen) {
             lcd_puts("Range Sensors");
             break;
         case SCREEN_COUNT:
-            // do nothing or display error
+            // do nothing (prevents compile warning)
             break;
         default:
             lcd_puts("Unknown Screen");
