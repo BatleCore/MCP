@@ -198,29 +198,31 @@ Outputs: None
 void seekBeacon() {
         
     static int prep_counter = 0;
-    static int leftVal;
-    static int rightVal;
+    static int leftVal = 0;
+    static int rightVal = 0;
     static uint16_t distance_values[3] = {0};
-    static int samples = 5;
+    static int samples = 1;
     static float thresh = 1.2; // +- for going straight
 
     // sprintf(msg, "\nseekBeacon : %d", prep_counter);
     // serial0_print_string(msg);
+
+    sprintf(msg, "\nL: %4d, R: %4d", freqLeft, freqRight);
+    serial0_print_string(msg);
+    sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
+    serial0_print_string(msg);
+    sprintf(msg, "\nL: %3d, R: %3d", signal_max[0], signal_max[1]);
+    serial0_print_string(msg);
+    sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
+    serial0_print_string(msg);
+
+    get_distances(distance_values); // this is causing frequency errors?
 
     if (prep_counter >= samples) {
         // seeking code
         leftVal = (leftVal * (samples - 1) + signal_max[0])/samples;
         rightVal = (rightVal * (samples - 1) + signal_max[1])/samples;
 
-        sprintf(msg, "\nL: %4d, R: %4d", freqLeft, freqRight);
-        serial0_print_string(msg);
-        sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
-        serial0_print_string(msg);
-        sprintf(msg, "\nL: %3d, R: %3d", signal_max[0], signal_max[1]);
-        serial0_print_string(msg);
-        sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
-        serial0_print_string(msg);
-        get_distances(distance_values);
 
         if (distance_values[1] > FRONT_HARD_LIM) { // no wall in front
             if ( leftVal == 0 && rightVal == 0 ) { // no signals
@@ -263,32 +265,9 @@ void seekBeacon() {
         rightVal = (rightVal * (samples - 1) + signal_max[1])/samples;
         prep_counter++;
     }
-    // sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max[0], signalLeft, rightVal, signal_max[1], signalRight);
-    // serial0_print_string(msg);
 
-
-    // get_distances(distance_values);
-
-    // // if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
-    // if ( distance_values[1] > FRONT_HARD_LIM){
-    //     // if ( leftVal > 10)
-    //     if ( leftVal > rightVal * 1.1 ) {
-    //         // go left
-    //         // serial0_print_string("\nleft");
-    //         motor_softturn_forward(0);
-    //     } else if ( rightVal > leftVal * 1.1 ) {
-    //         // go right
-    //         // serial0_print_string("\nright");
-    //         motor_softturn_forward(1);
-    //     } else {
-    //         // go straight
-    //         // serial0_print_string("\nstraight");
-    //         motor_straight_forward();
-    //     }
-    // } else {
-    //     // serial0_print_string("\nstopped");
-    //     motor_stop();
-    // }
+    sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max[0], signalLeft, rightVal, signal_max[1], signalRight);
+    serial0_print_string(msg);
 
     // Execute motor instruction
     
