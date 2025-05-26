@@ -50,5 +50,6 @@ void getLightValues(uint16_t* light_values);
 void getSignals(uint16_t* signal_values);
 void getFrequencies(uint16_t* freq_values);
 void LDR_test(void);
+void LDR_calibrate();
 
 #endif /* LIGHT_SENSOR_H_ */

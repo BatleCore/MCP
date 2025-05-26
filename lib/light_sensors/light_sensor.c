@@ -91,8 +91,8 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
 
     uint32_t now = milliseconds_now();
     if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
-        sprintf(msg, "\n%s hard max : %d", channel ? "right" : "left", signal);
-        serial0_print_string(msg);
+        // sprintf(msg, "\n%s hard max : %d", channel ? "right" : "left", signal);
+        // serial0_print_string(msg);
         signal_max[channel] = signal;
         last_state[channel] = true;
         uint32_t dt = now - last_time[channel];
@@ -102,15 +102,15 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
             edge_counter[channel] = 0;
             last_freq[channel] = (200000UL) / dt;
         }
-    } else {
-        if ( signal_max[channel] < signal ) {
-            sprintf(msg, "\n%s soft max : %d", channel ? "right" : "left", signal);
-            serial0_print_string(msg);
-            signal_max[channel] = signal;
-        } 
+    } else if (last_state[channel]) {
         if ( signal < SIGNAL_LOW_THRESHOLD ) {
             last_state[channel] = false;
         }
+        if ( signal_max[channel] < signal ) {
+            // sprintf(msg, "\n%s soft max : %d", channel ? "right" : "left", signal);
+            // serial0_print_string(msg);
+            signal_max[channel] = signal;
+        } 
       }
     edge_counter[channel]++;
     if (edge_counter[channel] > 400 && !new_edge[channel]) {
@@ -156,7 +156,7 @@ Outputs: left/right LDR values
 ISR(TIMER4_COMPA_vect) {
     isr_counter++; // used for debugging (serial print every 10 ISRs to not overflood serial)
     // Get sensor values
-    leftLDR = adc_read(PIN_LDR_LEFT);
+    leftLDR = 0.85 * adc_read(PIN_LDR_LEFT) + 85; // callibration.txt
     rightLDR = adc_read(PIN_LDR_RIGHT);
     // Check for signal against ambient light level
     baselineLeft = getBaseline(leftLDR, 0);
@@ -193,47 +193,48 @@ void seekBeacon() {
   
     // if (isr_counter>=20){ // for debugging
     //   isr_counter = 0;
+      
     //   sprintf(msg, "\n\n\nL raw: %d, base: %d, sig: %d, freq: %d.%02dHz", leftLDR, baselineLeft, signalLeft, freqLeft/100, freqLeft%100);
     //   serial0_print_string(msg);
     //   sprintf(msg, "\nR raw: %d, base: %d, sig: %d, freq: %d.%02dHz", rightLDR, baselineRight, signalRight, freqRight/100, freqRight%100);
     //   serial0_print_string(msg);
     // }
   
-    // sprintf(msg, "\nLmax: %d - %d\nRmax: %d - %d", signal_max[0], signalLeft, signal_max[1], signalRight);
-    // serial0_print_string(msg);
+    sprintf(msg, "\nLmax: %d : %d\nRmax: %d : %d", signal_max[0], signalLeft, signal_max[1], signalRight);
+    serial0_print_string(msg);
 
-    static float left_compensation = 1;
-    static float right_compensation = 1.4;
+    // static float left_compensation = 1;
+    // static float right_compensation = 1.4;
 
-    int leftVal = signal_max[0] * left_compensation;
-    int rightVal = signal_max[1] * right_compensation;
-    static uint16_t distance_values[3] = {0};
-    get_distances(distance_values);
+    // int leftVal = signal_max[0] * left_compensation;
+    // int rightVal = signal_max[1] * right_compensation;
+    // static uint16_t distance_values[3] = {0};
+    // get_distances(distance_values);
 
-    // if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
-    if ( distance_values[1] > FRONT_HARD_LIM){
-        // if ( leftVal > 10)
-        if ( leftVal > rightVal * 1.1 ) {
-            // go left
-            // serial0_print_string("\nleft");
-            motor_softturn_forward(0);
-        } else if ( rightVal > leftVal * 1.1 ) {
-            // go right
-            // serial0_print_string("\nright");
-            motor_softturn_forward(1);
-        } else {
-            // go straight
-            // serial0_print_string("\nstraight");
-            motor_straight_forward();
-        }
-    } else {
-        // serial0_print_string("\nstopped");
-        motor_stop();
-    }
+    // // if ( distance_values[1] > FRONT_HARD_LIM && leftVal > 0 && rightVal > 0 ){
+    // if ( distance_values[1] > FRONT_HARD_LIM){
+    //     // if ( leftVal > 10)
+    //     if ( leftVal > rightVal * 1.1 ) {
+    //         // go left
+    //         // serial0_print_string("\nleft");
+    //         motor_softturn_forward(0);
+    //     } else if ( rightVal > leftVal * 1.1 ) {
+    //         // go right
+    //         // serial0_print_string("\nright");
+    //         motor_softturn_forward(1);
+    //     } else {
+    //         // go straight
+    //         // serial0_print_string("\nstraight");
+    //         motor_straight_forward();
+    //     }
+    // } else {
+    //     // serial0_print_string("\nstopped");
+    //     motor_stop();
+    // }
 
     // Execute motor instruction
     
-    rs_motor_conversion();
+    // rs_motor_conversion();
 }
 
 /*************************************************
@@ -256,4 +257,11 @@ void LDR_test() {
         serial0_print_string(msg);
         _delay_ms(250);
     }
+}
+void LDR_calibrate() {
+  static char msg[40];
+    leftLDR = 1 * adc_read(PIN_LDR_LEFT);
+    rightLDR = adc_read(PIN_LDR_RIGHT);
+    sprintf(msg, "(%d, m * %d + c )\n", rightLDR, leftLDR);
+    serial0_print_string(msg);
 }
