@@ -21,9 +21,13 @@
 #include "servo_control.h"
 
 // global variables
-extern uint8_t current_mode;
 
 //functions
 void manual_loop();
 
+#endif
+
+#ifndef CURRENT_MODE
+#define CURRENT_MODE
+extern uint8_t current_mode;
 #endif

@@ -1,8 +1,6 @@
 // Lab 8 Robot Micro
 #include "Robot.h"
 
-uint8_t current_mode = MANUAL_MODE; // start in manual - global to make compiler happy
-
 /********************
 Robot Initialization
 - Serial for debug (Serial0)
@@ -29,6 +27,8 @@ void robot_setup() {
   _delay_ms(20);
   adc_init();        // Analog input (joystick + sensors)
   _delay_ms(20);
+
+  current_mode = MANUAL_MODE; // start in manual
 
   sei();           // Enable interrupts
 }

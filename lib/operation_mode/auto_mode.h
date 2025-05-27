@@ -26,5 +26,9 @@ void mode_test();
 void auto_loop();
 int turn_bias_manager(uint16_t left_dist, uint16_t right_dist);
 
+#endif
 
+#ifndef CURRENT_MODE
+#define CURRENT_MODE
+extern uint8_t current_mode;
 #endif
