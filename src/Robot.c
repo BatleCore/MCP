@@ -29,6 +29,7 @@ void robot_setup() {
   _delay_ms(20);
 
   current_mode = MANUAL_MODE; // start in manual
+  current_mode = AUTO_MODE; // start in manual
 
   sei();           // Enable interrupts
 }

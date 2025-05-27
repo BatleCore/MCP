@@ -134,7 +134,7 @@ void mode_7() {
       motor_straight_forward();
     }
   }
-  // rs_motor_conversion();
+  rs_motor_conversion();
 }
 
 void mode_test() {
@@ -167,12 +167,12 @@ int turn_bias_manager(uint16_t left_dist, uint16_t right_dist) {
 
 void auto_loop() {
   
-  seekBeacon();
+  // seekBeacon();
 
   if (0) {
     // follow beacon
   } else {
     // navigate with sensors
-    // mode_7();
+    mode_7();
   }
 }
