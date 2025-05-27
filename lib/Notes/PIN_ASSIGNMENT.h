@@ -4,8 +4,8 @@
 #include <avr/io.h>
 
 // INPUTS - DIGITAL
-#define PIN_JOY_L_BUTTON PD0    // D21 INT0 [Controller]
-#define PIN_JOY_R_BUTTON PD1    // D20 INT1 [Controller]
+#define PIN_JOY_L_BUTTON PD1    // D20 INT1 [Controller]
+#define PIN_JOY_R_BUTTON PD0    // D21 INT0 [Controller]
 
 // INPUTS - ANALOG
 #define PIN_BATTERY_SENSE 0     // D54 [Robot]

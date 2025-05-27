@@ -65,13 +65,4 @@ void manual_loop() {
   rs_motor_conversion();
   servo_set_pos(servo_pos);
 
-  // Serial debug at interval
-  char msg[40];
-  uint32_t lastSend = 0;   // Last time a packet was sent
-  if (milliseconds_now() - lastSend >= 500) {
-    lastSend = milliseconds_now();
-    sprintf(msg, "\nservo: %d", servo_pos);
-    serial0_print_string(msg);
-  }
-
 }

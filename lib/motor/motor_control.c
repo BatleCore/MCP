@@ -187,10 +187,10 @@ void differential_PWM_v3(uint8_t* motor_data){
   uint16_t right_duty = (motor_data[2]) ? 1750 + (motor_data[2]) : 0;
   uint8_t right_dir = motor_data[3];
 
-  sprintf(msg, "\nL: %d\t%d", left_dir, left_duty);
-  serial0_print_string(msg);
-  sprintf(msg, "\nR: %d\t%d", right_dir, right_duty);
-  serial0_print_string(msg);
+  // sprintf(msg, "\nL: %d\t%d", left_dir, left_duty);
+  // serial0_print_string(msg);
+  // sprintf(msg, "\nR: %d\t%d", right_dir, right_duty);
+  // serial0_print_string(msg);
   // sprintf(msg, "L: %u  \t %u \n", left_duty, right_duty);
   // serial0_print_string(msg);
   
