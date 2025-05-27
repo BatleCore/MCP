@@ -1,8 +1,6 @@
 //BATTERY VOLTAGE MONITORING
 #include "battery.h"
 
-char msg[40];
-
 void battery_init() {
   adc_init();
   DDR_BATTERY_LED |= (1<<PIN_BATTERY_LED);  // Configure digital output for LED control
@@ -34,8 +32,8 @@ uint8_t getVoltage() {
 
 // Debugging Function - Prints raw ADC values
 void testBattery() {
-  bat_val = adc_read(PIN_BATTERY_SENSE);
+  uint8_t bat_voltage = (bat_val * 84UL) / 1023;
   char msg[20];
-  sprintf(msg, "%d\n", bat_val);            
+  sprintf(msg, "ADC: %d Voltage: %d\n", bat_val, bat_voltage);            
   serial0_print_string(msg);
 }
