@@ -20,6 +20,10 @@ void differential_PWM_v3(uint8_t* motor_data)
 #include <stdint.h>
 
 uint8_t motor_data[4] = {0}; // this should replace motor_data in all files. auto mode should write to this, not have its own.
+uint8_t auto_speed_val = AUTO_SPEEDVAL_1;
+uint8_t auto_softturn_val = AUTO_STURN_VAL_1;
+uint8_t auto_hardturn_val = AUTO_HTURN_VAL_1;
+
 
 char msg[40];
 
@@ -439,7 +443,7 @@ void motor_stop(){
 
 void motor_straight_forward(){
   // full speed straight
-  motor_data[0] = MOTOR_AUTO_SPEED;
+  motor_data[0] = auto_speed_val;
   motor_data[1] = 1; // forward, always forward
   motor_data[2] = 0; // straight
   motor_data[3] = 0; // left  (not significant)
@@ -447,9 +451,9 @@ void motor_straight_forward(){
 
 void motor_softturn_forward(int turn_dir){
   // full speed soft turn
-  motor_data[0] = MOTOR_AUTO_SPEED;
+  motor_data[0] = auto_speed_val;
   motor_data[1] = 1; // forward, always forward
-  motor_data[2] = 245;
+  motor_data[2] = auto_softturn_val;
   motor_data[3] = turn_dir; // passed as arg, 0 or 1
 }
 
@@ -457,16 +461,29 @@ void motor_turn_spot(int turn_dir){
   // no speed hard turn
   motor_data[0] = 0;
   motor_data[1] = 1; // forward, always forward
-  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[2] = auto_hardturn_val;
   motor_data[3] = turn_dir; // passed as arg, 0 or 1
 }
 
 void motor_hardturn_forward(int turn_dir){
   // full speed hard turn
-  motor_data[0] = 250;
+  motor_data[0] = auto_speed_val;
   motor_data[1] = 1; // forward, always forward
-  motor_data[2] = MOTOR_AUTO_TURN;
+  motor_data[2] = auto_hardturn_val;
   motor_data[3] = turn_dir; // passed as arg, 0 or 1
+}
+
+void motor_automode_config(int mode) {
+  // mode = 0: maze nav, 1: beacon nav
+  if (mode == 0) { // maze
+    auto_speed_val = AUTO_SPEEDVAL_1;
+    auto_softturn_val = AUTO_STURN_VAL_1;
+    auto_hardturn_val = AUTO_HTURN_VAL_1;
+  } else if ( mode == 1 ) { // beacon
+    auto_speed_val = AUTO_SPEEDVAL_2;
+    auto_softturn_val = AUTO_STURN_VAL_2;
+    auto_hardturn_val = AUTO_HTURN_VAL_2;
+  }
 }
 
 

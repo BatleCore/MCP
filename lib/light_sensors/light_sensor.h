@@ -24,7 +24,7 @@
 #define BEACON2_FREQ 2000       // 20.00 Hz (in hundredths of Hz)
 #define FREQ_TOLERANCE    100   // ±5% tolerance (hundredths of Hz)
 #define PROXIMITY_THRESHOLD 900 // ADC value to trigger "close enough" detection
-#define SIGNAL_THRESHOLD 30     // Minimum signal to filter ambient false positives
+#define SIGNAL_THRESHOLD 20     // Minimum signal to filter ambient false positives
 #define SIGNAL_LOW_THRESHOLD 5
 
 // === Global Variables ===
@@ -51,5 +51,6 @@ void getSignals(uint16_t* signal_values);
 void getFrequencies(uint16_t* freq_values);
 void LDR_test(void);
 void LDR_calibrate();
+int freq_in_range(uint16_t freq, uint16_t target);
 
 #endif /* LIGHT_SENSOR_H_ */

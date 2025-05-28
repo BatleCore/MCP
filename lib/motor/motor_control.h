@@ -27,6 +27,14 @@
 #define MOTOR_AUTO_SPEED 250
 #define MOTOR_AUTO_TURN 250
 
+#define AUTO_SPEEDVAL_1 250;
+#define AUTO_HTURN_VAL_1 250;
+#define AUTO_STURN_VAL_1 246;
+
+#define AUTO_SPEEDVAL_2 150;
+#define AUTO_HTURN_VAL_2 250;
+#define AUTO_STURN_VAL_2 245;
+
 // CLOCK COMPLARE FOR PWMs
 #define DUTY_LEFT OCR1A
 #define DUTY_RIGHT OCR1B
@@ -54,6 +62,7 @@ void motor_turn_spot(int turn_dir);
 void motor_hardturn_forward(int turn_dir);
 void motor_direct_set(int sp_mag, int sp_dir, int turn_mag, int turn_dir);
 void motor_turn_modifier(int turn_dir);
+void motor_automode_config(int mode);
 
 //scope-global variables
 int centre_BOT;

@@ -19,7 +19,7 @@ void robot_setup() {
   battery_init(); 
   comms_init();
   display_init();
-  //LDR_init();
+  LDR_init();
   motor_init();
   servo_init();
 
@@ -43,7 +43,6 @@ int main(void) {
   
   while (1) {
 
-    monitorBattery(); // Monitor the battery voltage - common to either mode - mat
 
     // switch:case for AUTO and MANUAL modes
     switch (current_mode) {
@@ -51,9 +50,11 @@ int main(void) {
       case AUTO_MODE: {
 
         auto_init(); // eg. open servo
-        // serial0_print_string("in automode");
+        serial0_print_string("\nin auto mode");
         
         while(1) {
+
+          monitorBattery(); // Monitor the battery voltage - common to either mode - mat
           if (current_mode == MANUAL_MODE) {
             break; // exit while loop if mode switches
           }
@@ -70,9 +71,10 @@ int main(void) {
       case MANUAL_MODE: {
 
         // manual init (if necassary)
-        serial0_print_string("in manual mode");
+        serial0_print_string("\nin manual mode");
 
         while (1) {
+          monitorBattery(); // Monitor the battery voltage - common to either mode - mat
           if ( current_mode != MANUAL_MODE ) {
             break; // exit loop if mode switches
           }

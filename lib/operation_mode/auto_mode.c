@@ -11,6 +11,7 @@ char msg[50];
 
 void auto_init() {
   // set servo to 'open'
+  // LDR_init();
   servo_set_pos(SERVO_PULSE_OPEN);
 }
 
@@ -25,8 +26,8 @@ void mode_5() {
   int centre = distance_values[1];
   int right = distance_values[2];
 
-  sprintf(msg, "\nL: %d, C: %d, R: %d", left, centre, right);
-  serial0_print_string(msg);
+  // sprintf(msg, "\nL: %d, C: %d, R: %d", left, centre, right);
+  // serial0_print_string(msg);
 
   if (distance_values[1] < front_hard_lim) {
     front_hard_lim = FRONT_HARD_LIM;
@@ -98,8 +99,8 @@ void mode_7() {
   int centre = distance_values[1];
   int right = distance_values[2];
 
-  sprintf(msg, "\n\nL: %d, C: %d, R: %d", left, centre, right);
-  serial0_print_string(msg);
+  // sprintf(msg, "\n\nL: %d, C: %d, R: %d", left, centre, right);
+  // serial0_print_string(msg);
 
   if ( centre < front_hard_lim ) {
     // about to hit front wall - turn hard in open direction
@@ -149,7 +150,7 @@ int turn_bias_manager(uint16_t left_dist, uint16_t right_dist) {
   // left<right
   // 0 for left, 2 for right
 
-  serial0_print_string("\nturn bias manager");
+  // serial0_print_string("\nturn bias manager");
   if ( previous_turn_direction == 0) {
     left_dist = left_dist * turn_bias;
   } else if ( previous_turn_direction == 2 ) {
@@ -166,11 +167,23 @@ int turn_bias_manager(uint16_t left_dist, uint16_t right_dist) {
 }
 
 void auto_loop() {
-  
-  // seekBeacon();
+  // serial0_print_string("\nauto loop");
+  // sprintf(msg, "\nLf: %dm Rf: %d", freqLeft, freqRight);
+  // serial0_print_string(msg);
 
-  if (0) {
+  static int beacon_mode = 0;
+  static int target = 800;
+  
+  if (freq_in_range(freqLeft, target) || freq_in_range(freqRight, target)) {
+    beacon_mode = 1;
+  } else if (freq_in_range(freqLeft, target) == 0 && freq_in_range(freqRight, target) == 0) {
+    beacon_mode = 0;
+  }
+
+  if (beacon_mode) {
     // follow beacon
+    motor_automode_config(1);
+    seekBeacon();
   } else {
     // navigate with sensors
     mode_7();
