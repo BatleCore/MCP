@@ -28,7 +28,7 @@
 
 #define AUTO_MODE 0
 #define MANUAL_MODE 1
-#define LCD_RATE 250 // 250ms 4hz
+#define LCD_RATE 1000 // 250ms 4hz
 #define CONTROL_RATE 20 // 20ms 50hz
 
 

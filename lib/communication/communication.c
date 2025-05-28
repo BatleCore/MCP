@@ -21,6 +21,7 @@ void sendBATTERYdata() {
 // Controller
 void requestLIGHTdata() {
     serial2_write_bytes(1, LIGHT_REQUEST);
+    serial0_print_string("\nrequest sent");
 }
 
 void sendLIGHTdata() {
@@ -58,8 +59,8 @@ void sendMotorControl() {
     uint8_t motor_toSerial[4];
     cs_motor_conversion(motor_toSerial);
     serial2_write_bytes(5, MOTOR_CONTROL, motor_toSerial[0], motor_toSerial[1], motor_toSerial[2], motor_toSerial[3]);
-    sprintf(msg, "0: %d, 1: %d\n2: %d, 3: %d\n\n", motor_toSerial[0], motor_toSerial[1], motor_toSerial[2], motor_toSerial[3]);
-    serial0_print_string(msg);
+    // sprintf(msg, "0: %d, 1: %d\n2: %d, 3: %d\n\n", motor_toSerial[0], motor_toSerial[1], motor_toSerial[2], motor_toSerial[3]);
+    // serial0_print_string(msg);
 }
 
 // Controller

@@ -32,6 +32,8 @@
 #define PIN_PWM_MR PB6 // D12 - OC1B [Robot]
 #define PIN_PWM_SERVO PE3 // D5 - OC3A [Robot]
 
+uint8_t robot_mode;
+
 // ISR CONSTANTS
 #define PWM_LEFT OCR1B // [Robot]
 #define PWM_RIGHT OCR1A // [Robot]

@@ -3,6 +3,9 @@
 
 #define auto_mode 0 // placeholder for compiling - update controller main
 
+
+char msg[50];
+
 volatile ScreenState currentScreen = SCREEN_HOME;
 uint8_t dataRX[6];
 char buffer[20];
@@ -34,8 +37,8 @@ void updateHomeScreen () {
     uint32_t start_wait = milliseconds_now(); 
     while (!serial2_available()) {
         if (milliseconds_now() - start_wait >= 200) {
-            sprintf(buffer, "%s MODE: ", auto_mode ? "AUT" : "MAN"); // Print first line - Operation Mode
-            lcd_goto(0x40);
+            sprintf(buffer, "MODE: %s       ", robot_mode ? "MAN" : "AUT"); // Print first line - Operation Mode
+            lcd_goto(0x00);
             lcd_puts(buffer);
             lcd_goto(0x40); 
             lcd_puts("BAT: TIMEOUT"); // Print second line - Battery Request Timeout
@@ -47,7 +50,7 @@ void updateHomeScreen () {
     serial2_get_data(dataRX, 2); // Get the 2-byte packet ([0] instruction code, [1] battery voltage)
     if (dataRX[0] == BATTERY_REQUEST) {
         uint8_t bat_percentage = (dataRX[1] > 70) ? (100 * (dataRX[1] - 70) / 14) : 0; // calculate battery percentage
-        sprintf(buffer, "%s MODE: ", auto_mode ? "AUT" : "MAN"); // Print first line - Operation Mode
+        sprintf(buffer, "MODE: %s", robot_mode ? "MAN" : "AUT"); // Print first line - Operation Mode
         lcd_goto(0x00);
         lcd_puts(buffer);
         sprintf(buffer, "BAT: %d.%dV %3d%% ", dataRX[1] / 10, dataRX[1] % 10, bat_percentage); // Print second line - Battery voltage & percentage
@@ -64,7 +67,8 @@ void updateLightScreen() {
     uint32_t start_wait = milliseconds_now();
     while (!serial2_available()) {
         if (milliseconds_now() - start_wait >= 200) {
-            lcd_puts("LDR: TIMEOUT"); // Response timeout print error
+            lcd_goto(0x00);
+            lcd_puts("LDR: ERR"); // Response timeout print error
             return;
         }
     }
@@ -72,6 +76,8 @@ void updateLightScreen() {
     // Response received
     serial2_get_data(dataRX, 5); // Get the 5-byte packet ([0] instruction code, [1,2] L/R LDR values, [3,4] L/R frequency values)
     if (dataRX[0] == LIGHT_REQUEST) {
+        sprintf(msg, "/n0: %d, 1: %d, 2: %d, 3: %d", dataRX[1], dataRX[2], dataRX[3], dataRX[4]);
+        serial0_print_string(msg);
         // get percentages in 2 digits
         uint8_t left_percentage = 100*dataRX[1]/250;
         uint8_t right_percentage = 100*dataRX[2]/250;
@@ -107,7 +113,8 @@ void updateRangeScreen() {
     uint32_t start_wait = milliseconds_now();
     while (!serial2_available()) {
         if (milliseconds_now() - start_wait >= 200) {
-            lcd_puts("RANGE: TIMEOUT"); // Response timeout print error
+            lcd_goto(0x00);
+            lcd_puts("RANGE: ERR"); // Response timeout print error
             return;
         }
     }    
@@ -132,8 +139,7 @@ void updateRangeScreen() {
 }
 
 void updateLCD() {
-
-    lcd_clrscr();
+    
 
     switch(currentScreen) {
         case SCREEN_HOME:
@@ -165,6 +171,7 @@ ISR(INT0_vect) {
     static uint32_t last_press = 0;
     if (milliseconds_now() - last_press > 250) {
         currentScreen = (currentScreen + 1) % SCREEN_COUNT; // cycle through screens
+        lcd_clrscr();
         last_press = milliseconds_now();
     }
 }

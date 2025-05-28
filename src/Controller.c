@@ -1,7 +1,6 @@
 // CONTROLLER
 #include "Controller.h"
 
-uint8_t robot_mode = MANUAL_MODE;
 
 // System setup
 void controller_setup() {
@@ -14,6 +13,8 @@ void controller_setup() {
   _delay_ms(20);
   adc_init();           // Enable analog inputs (for joysticks)
   _delay_ms(20);
+
+  robot_mode = MANUAL_MODE;
 
   // ADC PINS SET TO INPUT
   DDRK &= ~(1<<PIN_JOY_L_X);
@@ -34,6 +35,7 @@ void controller_setup() {
 // Reads joystick values and sends them to the robot every 20ms
 int main(void) {
   controller_setup();  // Init everything
+  sendSwitchOperation(MANUAL_MODE);
 
   uint32_t last_LCD_update = 0;   // Last time LCD was updated
   uint32_t last_control_update = 0;   // Last time control was sent to robot
@@ -41,10 +43,13 @@ int main(void) {
   while (1) {
 
     // Update robot with controls every 50ms when in manual mode (20x/sec)
-    if ((robot_mode == MANUAL_MODE) && (milliseconds_now() - last_control_update >= CONTROL_RATE)) {
-      sendMotorControl();
-      sendServoControl();
-      last_control_update = milliseconds_now();
+    if ((milliseconds_now() - last_control_update >= CONTROL_RATE)) {
+      if((robot_mode == MANUAL_MODE)) {
+        sendMotorControl();
+        sendServoControl();
+        last_control_update = milliseconds_now();
+      }
+      sendSwitchOperation(robot_mode);
     }
 
     // Update LCD contents every 250ms (4x/sec)
@@ -70,6 +75,5 @@ ISR(INT1_vect) {
       } else {
         robot_mode = MANUAL_MODE;  // Switch from auto to manual
       }
-      sendSwitchOperation(robot_mode);
     }
 }
