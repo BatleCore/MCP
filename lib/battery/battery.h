@@ -19,15 +19,16 @@
 #define DDR_BATTERY_LED DDRA
 #define BATTERY_THRESH 853    // seems to trip at 7.0v supply..?
 #define CHECK_TIME 100
-#define FLASH_TIME 25
+#define FLASH_TIME 200
 
 // === Global Variables ===
-uint8_t bat_val;             // stores battery voltage reading
+uint16_t bat_val;             // stores battery voltage reading
 bool bat_low;
 
 // === Functions ===
 void battery_init();
 void monitorBattery();
 uint8_t getVoltage();
+void testBattery();
 
 #endif
