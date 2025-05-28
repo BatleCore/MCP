@@ -208,10 +208,10 @@ void seekBeacon() {
     serial0_print_string(msg);
     // sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
     // serial0_print_string(msg);
-    sprintf(msg, "\nL: %4d, R: %4d", signal_max_running[0], signal_max_running[1]);
-    serial0_print_string(msg);
-    sprintf(msg, "\nL: %4d, R: %4d", signal_max_result[0], signal_max_result[1]);
-    serial0_print_string(msg);
+    // sprintf(msg, "\nL: %4d, R: %4d", signal_max_running[0], signal_max_running[1]);
+    // serial0_print_string(msg);
+    // sprintf(msg, "\nL: %4d, R: %4d", signal_max_result[0], signal_max_result[1]);
+    // serial0_print_string(msg);
     // sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
     // serial0_print_string(msg);
 
@@ -231,34 +231,34 @@ void seekBeacon() {
         
         if (distance_values[1] > FRONT_HARD_LIM) { // no wall in front
             if ( leftVal == 0 && rightVal == 0 ) { // no signals
-                sprintf(msg, "\nspot %s - no signals", (distance_values[0]<distance_values[2]) ? "right" : "left");
-                serial0_print_string(msg);
+                // sprintf(msg, "\nspot %s - no signals", (distance_values[0]<distance_values[2]) ? "right" : "left");
+                // serial0_print_string(msg);
                 motor_turn_spot(distance_values[0]<distance_values[2]); // rotate away from closest wall
             } else if ( leftVal == 0 || rightVal == 0 ) { // only one signal ( becomes XOR due to previous IF)
                 // one value exists, not both
                 // hard turn in that direction
-                sprintf(msg, "\nhard %s - missing signal", (rightVal > leftVal) ? "right" : "left");
-                serial0_print_string(msg);
+                // sprintf(msg, "\nhard %s - missing signal", (rightVal > leftVal) ? "right" : "left");
+                // serial0_print_string(msg);
                 motor_turn_spot(rightVal > leftVal); // if leftVal == 0 , turn right
             } else { // both signals
                 if ( leftVal > rightVal * thresh ) { // left too strong
                     // if left is much brighter
                     // go left
-                    serial0_print_string("\nleft  - uneven signals");
+                    // serial0_print_string("\nleft  - uneven signals");
                     motor_hardturn_forward(0);
                 } else if ( rightVal > leftVal * thresh ) { // right too strong
                     // if right is much brighter
                     // go right
-                    serial0_print_string("\nright - uneven signals");
+                    // serial0_print_string("\nright - uneven signals");
                     motor_hardturn_forward(1);
                 } else { // left and right about the same
                     // left and right are similar
-                serial0_print_string("\nstraight - even signals");
+                // serial0_print_string("\nstraight - even signals");
                     motor_straight_forward();
                 }
             }
         } else { // front obstruction
-            serial0_print_string("\nstop - wall");
+            // serial0_print_string("\nstop - wall");
             motor_stop();
         }
     } else if (prep_counter == 0) {

@@ -6,7 +6,7 @@
 void manual_loop() {
  
   uint8_t dataRX[6];
-  uint16_t servo_pos = 0;
+  // uint16_t servo_pos = 0;
   
   if (serial2_available()) { // used when controlling via serial
     serial2_get_data(dataRX, 6);
@@ -38,11 +38,7 @@ void manual_loop() {
 
       case SERVO_CONTROL: {
         // copied over from servofromserial in servo lib
-        if (dataRX[2] == 2) {
-          servo_pos = SERVO_PULSE_CLOSE;
-        } else if (dataRX[2] == 0) {
-          servo_pos = SERVO_PULSE_OPEN;
-        }
+        servo_fromSerial(dataRX);
 
         //servo_fromSerial(dataRX); // operates servo directly
         break;
@@ -63,6 +59,6 @@ void manual_loop() {
 
   // outside of switch case to eliminate serial delay lag
   rs_motor_conversion();
-  servo_set_pos(servo_pos);
+  // servo_set_pos(servo_pos);
 
 }

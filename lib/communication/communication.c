@@ -35,6 +35,8 @@ void sendLIGHTdata() {
     uint8_t leftFreq = (frequencies[0] + 5) / 10; // Truncates least significant digit with nearest 10 rounding
     uint8_t rightFreq = (frequencies[1] + 5) / 10;
     // Sending data
+    sprintf(msg, "\n%d, %d, %d, %d",leftLDR, rightLDR, leftFreq, rightFreq); 
+    serial0_print_string(msg);
     serial2_write_bytes(5, LIGHT_REQUEST, leftLDR, rightLDR, leftFreq, rightFreq); 
 }
 

@@ -82,8 +82,8 @@ void gripper_toggle() { // will be obsolete
 
 // Robot
 void servo_fromSerial(uint8_t* data_fromSerial) {
-  sprintf(msg, "0: %d, 1: %d, 2: %d\n", data_fromSerial[0], data_fromSerial[1], data_fromSerial[2]);
-  serial0_print_string(msg);
+  // sprintf(msg, "0: %d, 1: %d, 2: %d\n", data_fromSerial[0], data_fromSerial[1], data_fromSerial[2]);
+  // serial0_print_string(msg);
   if (data_fromSerial[2] == 2) {
     servo_set_pos(SERVO_PULSE_CLOSE);
   } else if (data_fromSerial[2] == 0) {
