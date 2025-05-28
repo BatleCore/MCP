@@ -14,7 +14,8 @@ volatile uint16_t freqLeft = 0;
 volatile uint16_t freqRight = 0;
 volatile uint16_t baselineLeft = 0;
 volatile uint16_t baselineRight = 0;
-volatile int16_t signal_max[2] = {0};
+volatile int16_t signal_max_running[2] = {0};
+volatile int16_t signal_max_result[2] = {0};
 
 uint16_t turn = 0;
 uint16_t speed = 0;
@@ -88,28 +89,28 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
     static bool     new_edge[2]       = {0};
     static uint16_t edge_counter[2]   = {0};
     static bool     last_state[2]     = {false}; // false for low, true for high
+    static uint32_t dt = 0;
+
 
     uint32_t now = milliseconds_now();
-    if (!last_state[channel] && signal > SIGNAL_THRESHOLD) {
-        // sprintf(msg, "\n%s hard max : %d", channel ? "right" : "left", signal);
-        // serial0_print_string(msg);
-        signal_max[channel] = signal;
+    if (!last_state[channel] && signal > SIGNAL_THRESHOLD) { // rising edge detected
+        signal_max_running[channel] = signal;
         last_state[channel] = true;
-        uint32_t dt = now - last_time[channel];
+        dt = now - last_time[channel];
         last_time[channel] = now;
         if (dt > 47) {
             new_edge[channel] = true;
             edge_counter[channel] = 0;
-            last_freq[channel] = (200000UL) / dt;
+            last_freq[channel] = (100000UL) / dt;
         }
-    } else if (last_state[channel]) {
-        if ( signal < SIGNAL_LOW_THRESHOLD ) {
-            last_state[channel] = false;
+    } else if (last_state[channel]) { // if currently in high state
+        if ( signal < SIGNAL_LOW_THRESHOLD ) { // low state detection
+            last_state[channel] = false; // switch to low state
+            // store the max value for previous cycle in results
+            signal_max_result[channel] = (signal_max_running[channel] < SIGNAL_LOW_THRESHOLD) ? 0 : signal_max_running[channel];
         }
-        if ( signal_max[channel] < signal ) {
-            // sprintf(msg, "\n%s soft max : %d", channel ? "right" : "left", signal);
-            // serial0_print_string(msg);
-            signal_max[channel] = signal;
+        if ( signal_max_running[channel] < signal ) { // live update max high value
+            signal_max_running[channel] = signal;
         } 
       }
     edge_counter[channel]++;
@@ -120,13 +121,14 @@ uint16_t getFrequency(int16_t signal, uint8_t channel) {
     // last_signal[channel] = signal;
 
     if ( !last_freq[channel] ) {
-        signal_max[channel] = 0;
+        signal_max_running[channel] = 0;
     } 
-    if ( signal_max[channel] > 1023 ) {
-        signal_max[channel] = 0;
+    if ( signal_max_running[channel] > 1023 ) {
+        signal_max_running[channel] = 0;
     }
-
-
+    if (now - last_time[channel] > dt) {
+        signal_max_result[channel] = 0;
+    }
     return last_freq[channel];
 }
 
@@ -200,30 +202,33 @@ void seekBeacon() {
     static int rightVal = 0;
     static uint16_t distance_values[3] = {0};
     static int samples = 1;
-    static float thresh = 1.2; // +- for going straight
+    static float thresh = 1.1; // +- for going straight
 
-    // sprintf(msg, "\nseekBeacon : %d", prep_counter);
-    // serial0_print_string(msg);
-
-    sprintf(msg, "\nL: %4d, R: %4d", freqLeft, freqRight);
+    sprintf(msg, "\n\nL: %4d, R: %4d", freqLeft, freqRight);
     serial0_print_string(msg);
     // sprintf(msg, "\nL: %3d, R: %3d", signalLeft, signalRight);
     // serial0_print_string(msg);
-    // sprintf(msg, "\nL: %3d, R: %3d", signal_max[0], signal_max[1]);
-    // serial0_print_string(msg);
+    sprintf(msg, "\nL: %4d, R: %4d", signal_max_running[0], signal_max_running[1]);
+    serial0_print_string(msg);
+    sprintf(msg, "\nL: %4d, R: %4d", signal_max_result[0], signal_max_result[1]);
+    serial0_print_string(msg);
     // sprintf(msg, "\nL: %3d, R: %3d", leftVal, rightVal);
     // serial0_print_string(msg);
 
-    get_distances(distance_values); // this is causing frequency errors?
-    sprintf(msg, "\nL: %d, C: %d, R: %d", distance_values[0], distance_values[1], distance_values[2]);
-    serial0_print_string(msg);
+    get_distances(distance_values);
+
+    // sprintf(msg, "\nL: %d, C: %d, R: %d", distance_values[0], distance_values[1], distance_values[2]);
+    // serial0_print_string(msg);
 
     if (prep_counter >= samples) {
         // seeking code
-        leftVal = (leftVal * (samples - 1) + signal_max[0])/samples;
-        rightVal = (rightVal * (samples - 1) + signal_max[1])/samples;
+        // leftVal = (leftVal * (samples - 1) + signal_max_running[0])/samples;
+        // rightVal = (rightVal * (samples - 1) + signal_max_running[1])/samples;
 
+        leftVal = signal_max_result[0];
+        rightVal = signal_max_result[1];
 
+        
         if (distance_values[1] > FRONT_HARD_LIM) { // no wall in front
             if ( leftVal == 0 && rightVal == 0 ) { // no signals
                 sprintf(msg, "\nspot %s - no signals", (distance_values[0]<distance_values[2]) ? "right" : "left");
@@ -234,18 +239,18 @@ void seekBeacon() {
                 // hard turn in that direction
                 sprintf(msg, "\nhard %s - missing signal", (rightVal > leftVal) ? "right" : "left");
                 serial0_print_string(msg);
-                motor_hardturn_forward(rightVal > leftVal); // if leftVal == 0 , turn right
+                motor_turn_spot(rightVal > leftVal); // if leftVal == 0 , turn right
             } else { // both signals
                 if ( leftVal > rightVal * thresh ) { // left too strong
                     // if left is much brighter
                     // go left
                     serial0_print_string("\nleft  - uneven signals");
-                    motor_softturn_forward(0);
+                    motor_hardturn_forward(0);
                 } else if ( rightVal > leftVal * thresh ) { // right too strong
                     // if right is much brighter
                     // go right
                     serial0_print_string("\nright - uneven signals");
-                    motor_softturn_forward(0);
+                    motor_hardturn_forward(1);
                 } else { // left and right about the same
                     // left and right are similar
                 serial0_print_string("\nstraight - even signals");
@@ -257,21 +262,21 @@ void seekBeacon() {
             motor_stop();
         }
     } else if (prep_counter == 0) {
-        leftVal = signal_max[0];
-        rightVal = signal_max[1];
+        leftVal = signal_max_running[0];
+        rightVal = signal_max_running[1];
         prep_counter++;
     } else {
-        leftVal = (leftVal * (samples - 1) + signal_max[0])/samples;
-        rightVal = (rightVal * (samples - 1) + signal_max[1])/samples;
+        leftVal = (leftVal * (samples - 1) + signal_max_running[0])/samples;
+        rightVal = (rightVal * (samples - 1) + signal_max_running[1])/samples;
         prep_counter++;
     }
 
-    // sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max[0], signalLeft, rightVal, signal_max[1], signalRight);
+    // sprintf(msg, "\nLmax: %3d : %3d : %3d\nRmax: %3d : %3d : %3d", leftVal, signal_max_running[0], signalLeft, rightVal, signal_max_running[1], signalRight);
     // serial0_print_string(msg);
 
     // Execute motor instruction
     
-    // rs_motor_conversion();
+    rs_motor_conversion();
 }
 
 /*************************************************
@@ -301,4 +306,12 @@ void LDR_calibrate() {
     rightLDR = adc_read(PIN_LDR_RIGHT);
     sprintf(msg, "(%d, m * %d + c )\n", rightLDR, leftLDR);
     serial0_print_string(msg);
+}
+
+int freq_in_range(uint16_t freq, uint16_t target) {
+    if (freq < target * 1.25 && freq > target * 0.8) {
+        return 1;
+    } else {
+        return 0;
+    }
 }

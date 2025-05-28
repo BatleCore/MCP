@@ -166,11 +166,19 @@ int turn_bias_manager(uint16_t left_dist, uint16_t right_dist) {
 }
 
 void auto_loop() {
+  static int beacon_mode = 0;
+  static int target = 2000;
   
-  // seekBeacon();
+  if (freq_in_range(freqLeft, 2000) || freq_in_range(freqRight, 2000)) {
+    beacon_mode = 1;
+  } else if (freq_in_range(freqLeft, 2000) == 0 && freq_in_range(freqRight, 2000) == 0) {
+    beacon_mode = 0;
+  }
 
-  if (0) {
+  if (beacon_mode) {
     // follow beacon
+    motor_automode_config(1);
+    seekBeacon();
   } else {
     // navigate with sensors
     mode_7();
